@@ -3,13 +3,14 @@
 
 class BTree:
     class Node:
-        def __init__(self, t, is_leaf):
+        def __init__(self, t, is_leaf, tree_instance):
             self.t = t
             self.fill = 0
             self.key = [None]*(2*t-1)
             self.c = [None]*(2*t)
             self.is_leaf = is_leaf
 
+            self.inst = tree_instance
         
         def find_key(self, val):
             i = 0
@@ -17,14 +18,17 @@ class BTree:
                 i += 1
             return i
 
+        def leaf_insert(self, pos, val):
+            for i in range(self.fill, pos, -1):
+                self.key[i] = self.key[i-1]
+            self.key[pos] = val
+            self.fill += 1
+
         def insert(self, val):
             pos = self.find_key(val)
 
             if self.is_leaf:
-                for i in range(self.fill, pos, -1):
-                    self.key[i] = self.key[i-1]
-                self.key[pos] = val
-                self.fill += 1
+                self.leaf_insert(pos, val)
             else:
                 if self.c[pos].fill == 2*self.t-1:
                     self.split_child(pos)
@@ -35,7 +39,7 @@ class BTree:
 
         def split_child(self, c_id):
             l = self.c[c_id]
-            r = BTree.Node(self.t, l.is_leaf)
+            r = self.inst.Node(self.t, l.is_leaf, self.inst)
 
             for i in range(self.t-1):
                 r.key[i] = l.key[self.t + i]
@@ -189,13 +193,13 @@ class BTree:
 
     def insert(self, val):
         if self.root == None:
-            self.root = BTree.Node(self.t, True)
+            self.root = self.Node(self.t, True, self)
             self.root.key[0] = val
             self.root.fill = 1
             return
         
         if self.root.fill == 2*self.t-1:
-            new_root = BTree.Node(self.t, False)
+            new_root = self.Node(self.t, False, self)
             new_root.c[0] = self.root
             self.root = new_root
 
