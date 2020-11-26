@@ -3,7 +3,7 @@ import uuid
 from animation import BaseAnimation
 from animation import AnimationManager
 
-VALUEBOX_SIZE = (1.0, 1.0)
+VALUEBOX_SIZE = [1.0, 1.0]
 BOXMOVE_DURATION = 1
 
 class Box:
@@ -15,9 +15,6 @@ class Box:
         self.parent = parent
         self.padding = padding
         self.manager = manager
-
-    def draw(self, screen):
-        pg.draw.rect(screen, self.color, (self.pos, (50, 50)))
 
     def move(self, pos):
         self.manager.animation.start_animation(MoveBoxAnimation(self, self.pos, pos))
@@ -31,9 +28,9 @@ class ValueBox(Box):
 
 class NodeBox(Box):
     def __init__(self, manager, pos, parent=None):
-        Box.__init__(self, manager, pos, parent=parent)
+        Box.__init__(self, manager, pos, parent=parent, padding=0.1)
         self.contained_values = []
-        self.adjust_size()
+        self.size[0] = 0
 
     def get_relative(self, pos):
         return [pos*VALUEBOX_SIZE[0], 0]
@@ -43,29 +40,38 @@ class NodeBox(Box):
     
     def shift_values(self, pos, shift):
         animation_list = []
-        animation_manager = self.manager.animation
 
         move_vect = [shift*VALUEBOX_SIZE[0], 0]
-        for box in contained_values[pos:]:
-            animation_list.append(MoveBoxAnimation(box, box.pos, [x + d for x, d in box.pos, move_vect]))
+        for box in self.contained_values[pos:]:
+            animation_list.append(MoveBoxAnimation(box, box.pos, [x + d for x, d in zip(box.pos, move_vect)]))
         self.size[0] += move_vect
 
-        animation_manager
-
-    def adjust_size(self):
-        self.size[0] = len(self.contained_values)
+        return animation_list
 
     def insert_value(self, pos, value_box):
-        self.adjust_size()
-    
+        animation_manager = self.manager.animation
+        
+        value_box.parent = self
+        value_box.pos = self.relative_from_absolute(value_box.pos)
+
+        shiftlist = self.shift_values(pos, 1)
+
+        def callback():
+            self.contained_values.insert(pos, value_box)
+            value_box.move(self.get_relative(pos))
+
+        animation_manager.synchronous_animations(shiftlist, callback)
+        
+
+
 
 class BoxManager:
-    def __init__(self, animation_manager: AnimationManager):
+    def __init__(self, animation_manager):
         self.animation = animation_manager
         self.boxes = {}
     
     def new_node(self):
-        res = NodeBox(self, (0, 0))
+        res = NodeBox(self, [0, 0])
         self.boxes[res.u_id] = res
         return res
     
@@ -75,10 +81,12 @@ class BoxManager:
 class MoveBoxAnimation(BaseAnimation):
     def __init__(self, box, pos_from, pos_to, duration=BOXMOVE_DURATION):
         BaseAnimation.__init__(self, duration)
-        self.fr = pos1
-        self.to = pos2
+        self.fr = pos_from
+        self.to = pos_to
         self.box = box
 
     def update_objects(self):
-        box.pos = [t*x2 + (1-t)*x2 for x1, x2 in zip(pos1, pos2)]
+        t = self.progress
+        self.box.pos = [t*x2 + (1-t)*x1 for x1, x2 in zip(self.fr, self.to)]
+        pass
 

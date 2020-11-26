@@ -2,20 +2,14 @@
 import pygame as pg
 import animation as ani
 import box
+import draw_module as draw
 
-def main():
-    pg.init()
+quit_flag = False
 
-    screen = pg.display.set_mode((1600, 1000))
+def animation_loop(screen, clock, ani_manager, box_manager):
+    global quit_flag
 
-    clock = pg.time.Clock()
-
-    quit_flag = False
-    ani_manager = ani.AnimationManager()
-    ani_manager.start_animation(ani.BaseAnimation(1), lambda: print("First animation done"))
-    ani_manager.chain_animations([ani.BaseAnimation(1), ani.BaseAnimation(0.5)], lambda: print("Chain of animations done"))
-
-    while not quit_flag:
+    while ani_manager.is_running() and not quit_flag:
         time_delta = clock.tick(60) / 1000.0
         ani_manager.update(time_delta)
 
@@ -24,6 +18,38 @@ def main():
             if event.type == pg.QUIT:
                 quit_flag = True
 
+
+        draw.draw_list(box_manager.boxes, screen)
+        pg.display.update()
+
+def main():
+    global quit_flag
+    pg.init()
+
+    screen = pg.display.set_mode((1600, 1000))
+
+    clock = pg.time.Clock()
+
+    
+    ani_manager = ani.AnimationManager()
+    box_manager = box.BoxManager(ani_manager)
+
+    node = box_manager.new_node()
+    node.move([4, 4])
+
+    while not quit_flag:
+        if(ani_manager.is_running):
+            animation_loop(screen, clock, ani_manager, box_manager)
+        
+        time_delta = clock.tick(60) / 1000.0
+        ani_manager.update(time_delta)
+
+        screen.fill((0,0,0))
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                quit_flag = True
+
+        draw.draw_list(box_manager.boxes, screen)
         pg.display.update()
 
 
