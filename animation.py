@@ -27,7 +27,7 @@ class AnimationManager:
         return len(self.running) > 0
 
     def start_animation(self, animation, callback=None):
-        self.running.append((animation, callback))
+        self.running.append(([animation], callback))
 
     def chain_animations(self, animation_list, callback=None):
         if len(animation_list) == 0:
@@ -38,11 +38,15 @@ class AnimationManager:
         else:
             self.start_animation(animation_list[0], lambda: self.chain_animations(animation_list[1:], callback))
 
+    def synchronous_animations(self, animation_list, callback=None):
+        self.running.append((animation_list, callback))
+
     def update(self, time_delta):
-        for animation, cb in self.running:
-            animation.update(time_delta)
-            if animation.is_done() and cb is not None:
+        for animations, cb in self.running:
+            for a in animations:
+                a.update(time_delta)
+            if all([a.is_done() for a in animations]) and cb is not None:
                 cb()
 
-        self.running = [(a, cb) for (a, cb) in self.running if not a.is_done()]
+        self.running = [(animations, cb) for (animations, cb) in self.running if not all([a.is_done() for a in animations])]
 
