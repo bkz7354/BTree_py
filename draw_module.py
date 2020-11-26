@@ -9,7 +9,7 @@ def draw_single(box, surface):
     if box.parent != None:
         coords = [box.parent.pos[0]+box.pos[0], box.parent.pos[1]+box.pos[1]]
     if type(box) == "ValueBox":
-        pg.draw.rect(surface, box.color, coords, box.size)
+        pg.draw.rect(surface, box.color, coords, box.size, box.size)
         text = font.render(str(box.value), False, (255, 0, 0))
         surface.blit(text, coords[0]+box.padding*box.size, coords[1]+box.padding*box.size)
     else:
