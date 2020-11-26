@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 import pygame as pg
 import animation as ani
+import box
 
 def main():
     pg.init()
 
-    screen = pg.display.set_mode((800, 800))
+    screen = pg.display.set_mode((1600, 1000))
 
     clock = pg.time.Clock()
 

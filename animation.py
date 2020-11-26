@@ -9,6 +9,12 @@ class BaseAnimation:
             return
 
         self.progress += time_delta/self.duration
+        if self.progress > 1:
+            self.progress == 1
+        self.update_objects()
+
+    def update_objects(self):
+        pass
 
     def is_done(self):
         return self.progress >= 1
