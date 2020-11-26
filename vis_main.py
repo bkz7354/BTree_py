@@ -37,12 +37,16 @@ def main():
     node = box_manager.new_node()
     node.move([4, 4])
 
+    insert_list = [1, 2, 3]
+
     while not quit_flag:
         if(ani_manager.is_running):
             animation_loop(screen, clock, ani_manager, box_manager)
-        
         time_delta = clock.tick(60) / 1000.0
-        ani_manager.update(time_delta)
+        
+        if len(insert_list) > 0:
+            node.insert_value(0, box_manager.new_value(insert_list[0]))
+            del insert_list[0]
 
         screen.fill((0,0,0))
         for event in pg.event.get():

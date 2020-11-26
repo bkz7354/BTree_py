@@ -2,12 +2,13 @@ import pygame as pg
 import uuid
 from animation import BaseAnimation
 from animation import AnimationManager
+import copy
 
 VALUEBOX_SIZE = [1.0, 1.0]
 BOXMOVE_DURATION = 1
 
 class Box:
-    def __init__(self, manager, pos_, size_=VALUEBOX_SIZE, parent=None, padding=0):
+    def __init__(self, manager, pos_, size_, parent=None, padding=0):
         self.u_id = uuid.uuid1()
         self.size = size_
         self.pos=pos_
@@ -21,14 +22,14 @@ class Box:
 
 class ValueBox(Box):
     def __init__(self, manager, pos, val, parent=None):
-        Box.__init__(self, manager, pos, parent=parent)
+        Box.__init__(self, manager, pos, copy.deepcopy(VALUEBOX_SIZE), parent=parent)
         self.color = (200, 200, 200)
         self.value = val
 
 
 class NodeBox(Box):
     def __init__(self, manager, pos, parent=None):
-        Box.__init__(self, manager, pos, parent=parent, padding=0.1)
+        Box.__init__(self, manager, pos, copy.deepcopy(VALUEBOX_SIZE), parent=parent, padding=0.1)
         self.contained_values = []
         self.size[0] = 0
 
@@ -44,7 +45,7 @@ class NodeBox(Box):
         move_vect = [shift*VALUEBOX_SIZE[0], 0]
         for box in self.contained_values[pos:]:
             animation_list.append(MoveBoxAnimation(box, box.pos, [x + d for x, d in zip(box.pos, move_vect)]))
-        self.size[0] += move_vect
+        self.size[0] += move_vect[0]
 
         return animation_list
 
@@ -76,7 +77,9 @@ class BoxManager:
         return res
     
     def new_value(self, val):
-        res = ValueBox(self, (0,0), val)
+        res = ValueBox(self, [0,0], val)
+        self.boxes[res.u_id] = res
+        return res
 
 class MoveBoxAnimation(BaseAnimation):
     def __init__(self, box, pos_from, pos_to, duration=BOXMOVE_DURATION):
