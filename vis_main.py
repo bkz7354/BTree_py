@@ -21,6 +21,7 @@ def main():
     ani_manager.queue_animation(node.move([4, 4]))
     for x in range(4):
         ani_manager.queue_animation(node.insert_value(0, box_manager.new_value(x)))
+    ani_manager.queue_animation(node.move([5, 5]))
 
 
     while not quit_flag:

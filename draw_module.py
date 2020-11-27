@@ -1,31 +1,52 @@
 import pygame as pg
 import box as box_mod
+import numpy as np
 
 pg.init()
-font = pg.font.SysFont("Times new Roman", 12)
+font = pg.font.SysFont("Times new Roman", 30)
+SCALE = 80
 
 def get_rect(box):
-    scale = 80
+    
 
     pos = box.pos
     if box.parent != None:
-        pos = [box.parent.pos[0] + box.pos[0], box.parent.pos[1] + box.pos[1]]
+        pos = pos + box.parent.pos
 
-    pos = [int(scale*(x - box.padding/2)) for x in pos]
-    size = [int(scale*(x + box.padding)) for x in box.size]
+    pos =  ((pos - box.padding/2)*SCALE).astype(int)
+    size = ((box.size + box.padding)*SCALE).astype(int)
 
     return pos, size
 
+def render_value(size, value):
+    text = str(value).zfill(4)
 
-def draw_single(box, surface):
+    surf = font.render(text, True, (0, 0, 0))
+    surf_size = np.array(surf.get_size())
+
+    scale = min(size/surf_size)
+    return pg.transform.scale(surf, (surf_size*scale).astype(int))
+
+def draw_value_box(box, surface):
     pos, size = get_rect(box)
 
+    pg.draw.rect(surface, box.color, pos.tolist() + size.tolist())
+    pg.draw.rect(surface, (0,0,0), pos.tolist() + size.tolist(), 2)
+
+    text_surf = render_value(size*0.8, box.value)
+    text_size = np.array(text_surf.get_size())
+    surface.blit(text_surf, (pos + (size-text_size)/2).astype(int))
+
+def draw_node_box(box, surface):
+    pos, size = get_rect(box)
+
+    pg.draw.rect(surface, box.color, pos.tolist() + size.tolist())
+
+def draw_single(box, surface):
     if type(box) == box_mod.ValueBox:
-        pg.draw.rect(surface, box.color, pos+size)
-        #text = font.render(str(box.value), False, (255, 0, 0))
-        #surface.blit(text, coords[0]+box.padding*box.size, coords[1]+box.padding*box.size)
+        draw_value_box(box, surface)
     else:
-        pg.draw.rect(surface, box.color, pos+size)
+        draw_node_box(box, surface)
 
 
 def draw_list(boxes, surface):
