@@ -1,8 +1,28 @@
 
-class BaseAnimation:
-    def __init__(self, duration):
+class EmptyAnimation:
+    def __init__(self, callback=None):
+        self.callback = callback
+        self.done = False
+    
+    def update(self, time_delta):
+        if self.is_done():
+            return
+        
+        self.done = True
+        if self.callback is not None:
+            return self.callback(self)
+        return self
+
+    def is_done(self):
+        return self.done
+    
+
+
+class SingularAnimation:
+    def __init__(self, duration, callback=None):
         self.progress = 0
         self.duration = duration
+        self.callback = callback
 
     def update(self, time_delta):
         if self.is_done():
@@ -13,11 +33,54 @@ class BaseAnimation:
             self.progress = 1
         self.update_objects()
 
+        if self.is_done() and self.callback is not None:
+            return self.callback(self)
+        return self
+
     def update_objects(self):
         pass
 
     def is_done(self):
         return self.progress >= 1
+
+class SequentialAnimation:
+    def __init__(self, animation_list, callback=None):
+        self.animations = animation_list
+        self.callback = callback
+
+    def update(self, time_delta):
+        if self.is_done():
+            return
+
+        self.animations[0] = self.animations[0].update(time_delta)
+        if self.animations[0].is_done():
+            del self.animations[0]
+
+        if self.is_done() and self.callback is not None:
+            self.callback(self)
+        return self
+
+    def is_done(self):
+        return len(self.animations) == 0
+
+class ParallelAnimation:
+    def __init__(self, animation_list, callback=None):
+        self.animations = animation_list
+        self.callback = callback
+
+    def update(self, time_delta):
+        if self.is_done():
+            return
+
+        for a in self.animations:
+            a.update(time_delta)
+
+        if self.is_done() and self.callback is not None:
+            return self.callback(self)
+        return self
+
+    def is_done(self):
+        return all([x.is_done() for x in self.animations])
 
 class AnimationManager:
     def __init__(self):
@@ -26,27 +89,14 @@ class AnimationManager:
     def is_running(self):
         return len(self.running) > 0
 
-    def start_animation(self, animation, callback=None):
-        self.running.append(([animation], callback))
-
-    def chain_animations(self, animation_list, callback=None):
-        if len(animation_list) == 0:
-            return
-
-        if len(animation_list) == 1:
-            self.start_animation(animation_list[0], callback)
-        else:
-            self.start_animation(animation_list[0], lambda: self.chain_animations(animation_list[1:], callback))
-
-    def synchronous_animations(self, animation_list, callback=None):
-        self.running.append((animation_list, callback))
+    def queue_animation(self, animation):
+        self.running.append(animation)
 
     def update(self, time_delta):
-        for animations, cb in self.running:
-            for a in animations:
-                a.update(time_delta)
-            if all([a.is_done() for a in animations]) and cb is not None:
-                cb()
+        if not self.is_running():
+            return
 
-        self.running = [(animations, cb) for (animations, cb) in self.running if not all([a.is_done() for a in animations])]
+        self.running[0] = self.running[0].update(time_delta)
+        if self.running[0].is_done():
+            del self.running[0]
 
