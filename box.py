@@ -64,23 +64,35 @@ class NodeBox(Box):
 
         return EmptyAnimation(begin_shift(self, pos, shift))
 
-    def insert_value(self, pos, value_box):
-        def shift_begin(animation):
-            shiftAnimation = self.shift_values(pos, 1)
+    def insert_value(self, insert_idx, value_box):
+        class shift_begin:
+            def __init__(self, box):
+                self.box = box
+            def __call__(self, animation):
+                shiftAnimation = self.box.shift_values(insert_idx, 1)
 
-            return shiftAnimation
+                return shiftAnimation
         
-        def move_begin(animation):
-            value_box.parent = self
-            value_box.pos = self.relative_from_absolute(value_box.pos)
-            self.contained_values.insert(pos, value_box)
+        class move_begin:
+            def __init__(self, box):
+                self.box = box
+            def __call__(self, animation):
+                value_box.parent = self.box
+                value_box.pos = self.box.relative_from_absolute(value_box.pos)
+                self.box.contained_values.insert(insert_idx, value_box)
 
-            return value_box.move(self.get_relative(pos))
+                return value_box.move(self.box.get_relative(insert_idx))
 
-        shiftAnimation = EmptyAnimation(shift_begin)
-        moveAnimation = EmptyAnimation(move_begin)
+        shiftAnimation = EmptyAnimation(shift_begin(self))
+        moveAnimation = EmptyAnimation(move_begin(self))
 
         return SequentialAnimation([shiftAnimation, moveAnimation])
+    
+    def remove_value(self, remove_idx):
+        value_box = self.contained_values[remove_idx] 
+
+        fullAnimation = None # Do something here
+        return fullAnimation, value_box # returns animation and the removed box
         
 
 
@@ -98,6 +110,7 @@ class BoxManager:
         res = ValueBox(self, [0,0], val)
         self.boxes[res.u_id] = res
         return res
+    
 
 class MoveBoxAnimation(SingularAnimation):
     def __init__(self, box, pos_from, pos_to, duration=BOXMOVE_DURATION):
