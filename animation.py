@@ -72,8 +72,8 @@ class ParallelAnimation:
         if self.is_done():
             return
 
-        for a in self.animations:
-            a.update(time_delta)
+        for i, a in enumerate(self.animations):
+            self.animations[i] = a.update(time_delta)
 
         if self.is_done() and self.callback is not None:
             return self.callback(self)
