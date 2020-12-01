@@ -31,8 +31,6 @@ class Box:
         
         return EmptyAnimation(move_begin(pos, self))
     
-    def update(self):
-        pass
 
 class ValueBox(Box):
     def __init__(self, manager, pos, val, parent=None):
@@ -70,20 +68,32 @@ class NodeBox(Box):
 
                 for value_box in self.box.contained_values[pos:]:
                     animation_list.append(MoveBoxAnimation(value_box, value_box.pos, value_box.pos + self.move_vect))
-                animation_list.append(ResizeBoxAnimation(self.box, self.box.size, self.box.size + self.move_vect))
 
                 return ParallelAnimation(animation_list)
 
         return EmptyAnimation(begin_shift(self, pos, shift))
+
+
+    def resize(self, shift):
+        class begin_resize:
+            def __init__(self, box):
+                self.box = box
+                self.move_vect = np.array([shift*VALUEBOX_SIZE[0], 0])
+
+            def __call__(self, animation):
+                return ResizeBoxAnimation(self.box, self.box.size, self.box.size + self.move_vect)
+
+        return EmptyAnimation(begin_resize(self))
 
     def insert_value(self, insert_idx, value_box):
         class shift_begin:
             def __init__(self, box):
                 self.box = box
             def __call__(self, animation):
-                shiftAnimation = self.box.shift_values(insert_idx, 1)
+                shift = self.box.shift_values(insert_idx, 1)
+                resize = self.box.resize(1)
 
-                return shiftAnimation
+                return ParallelAnimation([shift, resize])
         
         class move_begin:
             def __init__(self, box):
@@ -201,7 +211,6 @@ class MoveBoxAnimation(SingularAnimation):
         t = self.progress
         self.box.pos = t*self.to + (1-t)*self.fr
         
-        self.box.update()
 
 class ResizeBoxAnimation(SingularAnimation):
     def __init__(self, box, size_from, size_to, duration=BOXMOVE_DURATION):

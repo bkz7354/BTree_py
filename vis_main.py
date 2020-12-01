@@ -24,10 +24,10 @@ def main():
         ani_manager.queue_animation(node.insert_value(0, box_manager.new_value(x)))
 
     node2 = box_manager.new_node()
-    box_manager.connect_nodes(node, node2, 1)
+    box_manager.connect_nodes(node, node2, 0)
     for x in range(3):
         ani_manager.queue_animation(node2.insert_value(0, box_manager.new_value(x)))
-    
+    ani_manager.queue_animation(node.insert_value(0, box_manager.new_value(x)))    
 
 
     while not quit_flag:

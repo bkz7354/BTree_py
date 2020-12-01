@@ -6,7 +6,7 @@ class EmptyAnimation:
     
     def update(self, time_delta):
         if self.is_done():
-            return
+            return self
         
         self.done = True
         if self.callback is not None:
@@ -26,7 +26,7 @@ class SingularAnimation:
 
     def update(self, time_delta):
         if self.is_done():
-            return
+            return self
 
         self.progress += time_delta/self.duration
         if self.progress > 1:
@@ -50,7 +50,7 @@ class SequentialAnimation:
 
     def update(self, time_delta):
         if self.is_done():
-            return
+            return self
 
         self.animations[0] = self.animations[0].update(time_delta)
         if self.animations[0].is_done():
@@ -70,10 +70,11 @@ class ParallelAnimation:
 
     def update(self, time_delta):
         if self.is_done():
-            return
+            return self
 
         for i, a in enumerate(self.animations):
             self.animations[i] = a.update(time_delta)
+            
 
         if self.is_done() and self.callback is not None:
             return self.callback(self)
