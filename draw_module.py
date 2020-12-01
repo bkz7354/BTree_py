@@ -7,6 +7,25 @@ pg.init()
 font = pg.font.SysFont("Times new Roman", 30)
 SCALE = 80
 
+class Perspective:
+    def __init__(self):
+        pass
+
+    def scale(self, vect):
+        # scales vector from relative to scrren coords
+        pass
+
+    def shift(self, vect):
+        # shifts vector in relative coordinates
+        pass
+
+    def get_coord(self):
+        # gets screen coordinates from relative (shift + scale)
+        pass
+
+    def get_box(pos, size):
+        # scales and shifts the box
+        pass
 
 def scale_coords(coords):
     return (coords*SCALE).astype(int)
