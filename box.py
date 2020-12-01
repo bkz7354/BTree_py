@@ -10,6 +10,12 @@ BOXMOVE_DURATION = 0.2
 ROW_DISTANCE = VALUEBOX_SIZE[1]
 NODE_DISTANCE = VALUEBOX_SIZE[0]
 
+def x_vector(x):
+    return np.array([x, 0])
+
+def y_vector(y):
+    return np.array([0, y])
+
 class Box:
     def __init__(self, manager, pos, size, parent=None, padding=0):
         self.u_id = uuid.uuid1()
@@ -53,14 +59,14 @@ class NodeBox(Box):
     def adjust_values(self):
         for i, value_box in enumerate(self.contained_values):
             value_box.parent = self
-            value_box.pos = np.array([i*VALUEBOX_SIZE[0], 0])
+            value_box.pos = x_vector(i*VALUEBOX_SIZE[0])
 
     def adjust(self):
         self.adjust_size()
         self.adjust_values()
 
     def get_relative(self, pos):
-        return [pos*VALUEBOX_SIZE[0], 0]
+        return x_vector(pos*VALUEBOX_SIZE[0])
 
     def rel_from_abs(self, abs_pos):
         return abs_pos - self.pos
@@ -88,7 +94,7 @@ class NodeBox(Box):
         class begin_shift:
             def __init__(self, box, pos, shift):
                 self.box = box
-                self.move_vect = np.array([shift*VALUEBOX_SIZE[0], 0])
+                self.move_vect = x_vector(shift*VALUEBOX_SIZE[0])
         
             def __call__(self, animation):
                 animation_list = []
@@ -105,7 +111,7 @@ class NodeBox(Box):
         class begin_resize:
             def __init__(self, box):
                 self.box = box
-                self.move_vect = np.array([shift*VALUEBOX_SIZE[0], 0])
+                self.move_vect = x_vector(shift*VALUEBOX_SIZE[0])
 
             def __call__(self, animation):
                 return ResizeBoxAnimation(self.box, self.box.size, self.box.size + self.move_vect)
@@ -113,30 +119,74 @@ class NodeBox(Box):
         return EmptyAnimation(begin_resize(self))
 
     def insert_leaf(self, insert_idx, value_box):
-        class shift_begin:
+        class insert_begin:
             def __init__(self, box):
                 self.box = box
             def __call__(self, animation):
                 shift = self.box.shift_values(insert_idx, 1)
                 resize = self.box.resize(1)
 
-                return ParallelAnimation([shift, resize])
-        
-        class move_begin:
-            def __init__(self, box):
-                self.box = box
-            def __call__(self, animation):
                 value_box.parent = self.box
                 value_box.pos = self.box.rel_from_abs(value_box.pos)
                 self.box.contained_values.insert(insert_idx, value_box)
+                move = value_box.move(self.box.get_relative(insert_idx))
 
-                return value_box.move(self.box.get_relative(insert_idx))
+                return ParallelAnimation([shift, resize, move])
 
-        shiftAnimation = EmptyAnimation(shift_begin(self))
-        moveAnimation = EmptyAnimation(move_begin(self))
-
-        return SequentialAnimation([shiftAnimation, moveAnimation])
+        return EmptyAnimation(insert_begin(self))
     
+    def split_insert(self, value_box, insert_idx):
+        class insert_begin:
+            def __init__(self, box):
+                self.box = box
+
+            def __call__(self, animation):
+                val_shift = self.box.shift_values(insert_idx, 1)
+                conn_shift = self.box.shift_connections(insert_idx+1, 1)
+                resize = self.box.resize(1)
+
+                value_box.parent = self.box
+                value_box.pos = self.box.rel_from_abs(value_box.pos)
+                self.box.contained_values.insert(insert_idx, value_box)
+                move = value_box.move(self.box.get_relative(insert_idx))
+
+                return ParallelAnimation([val_shift, conn_shift, resize, move])
+
+        return EmptyAnimation(insert_begin(self))
+
+    def split_child(self, c_idx):
+        new_node = self.manager.new_node()
+
+        class begin_split:
+            def __init__(self, node):
+                self.node = node
+
+            def __call__(self, animation):
+                node = self.node
+                child = node.connections[c_idx].target
+
+                median = len(child.contained_values)//2
+                moved_value = child.contained_values[median]
+                moved_value.pos = moved_value.pos + child.pos
+                moved_value.parent = None
+                value_move = node.split_insert(moved_value, c_idx)
+
+                new_node.pos = child.pos + x_vector(VALUEBOX_SIZE[0]*(median+1))
+                new_node.contained_values = child.contained_values[median+1:]
+                for i, conn in enumerate(child.connections[median+1:]):
+                    conn.plug(new_node, i)
+
+                del child.contained_values[median:]
+                del child.connections[median+1:]
+
+                child.adjust()
+                new_node.adjust()
+
+                return SequentialAnimation([value_move, node.manager.arrange_boxes([5, 2])])
+
+
+        return EmptyAnimation(begin_split(self)), new_node
+
     def add_connection(self, conn, idx):
         self.connections.insert(idx, conn)
         conn.beg = self.get_relative(idx) + np.array([0, VALUEBOX_SIZE[1]])
