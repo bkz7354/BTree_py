@@ -60,7 +60,7 @@ def draw_value_box(box, surface):
     surface.blit(text_surf, (pos + (size-text_size)/2).astype(int))
 
 def draw_connection(conn, surface):
-    beg = scale_coords(conn.beg)
+    beg = scale_coords(conn.beg + conn.parent.pos)
     end = scale_coords(conn.get_end())
 
     pg.draw.aaline(surface, conn.color, beg, end, 2)

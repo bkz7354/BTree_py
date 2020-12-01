@@ -108,15 +108,9 @@ class NodeBox(Box):
         
     def add_connection(self, conn, idx):
         self.connections.insert(idx, conn)
-        self.update_connections()
-    
-    def update_connections(self):
-        for (idx, conn) in enumerate(self.connections):
-            conn.beg = self.abs_from_rel(self.get_relative(idx) + np.array([0, VALUEBOX_SIZE[1]]))
-    
-    def update(self):
-        self.update_connections()
+        conn.beg = self.get_relative(idx) + np.array([0, VALUEBOX_SIZE[1]])
 
+    
     
 class Connection:
     def __init__(self, target_node):
@@ -127,6 +121,7 @@ class Connection:
         self.beg = None
     
     def plug(self, parent_node, idx):
+        self.parent = parent_node
         parent_node.add_connection(self, idx)
 
     def get_end(self):
@@ -159,15 +154,17 @@ class BoxManager:
     def set_root(self, node):
         self.root_id = node.u_id
 
-    def arrange_boxes(self):
+    def arrange_boxes(self, root_pos=[0, 0]):
         if self.root_id is None:
             return EmptyAnimation()
 
+        root_pos = np.array(root_pos)
         animation_list = []
 
         root = self.nodes[self.root_id]
-        animation_list.append(root.move(np.array([-root.size[0]/2, 0])))
-        
+        animation_list.append(root.move(root_pos - np.array([root.size[0]/2, 0])))
+        center_x, root_y = root_pos
+
         prev_row = [root]
         row_number = 1
         while True:
@@ -175,11 +172,11 @@ class BoxManager:
             if len(new_row) == 0:
                 break
             
-            row_y = row_number*(VALUEBOX_SIZE[0] + ROW_DISTANCE)
+            row_y = root_y + row_number*(VALUEBOX_SIZE[0] + ROW_DISTANCE)
             value_number = sum([len(node.contained_values) for node in new_row])
             row_width = value_number*VALUEBOX_SIZE[0] + (len(new_row)-1)*NODE_DISTANCE
 
-            row_x = -row_width/2
+            row_x = center_x - row_width/2
             for i, node in enumerate(new_row):
                 animation_list.append(node.move(np.array([row_x, row_y])))
                 row_x += node.size[0] + NODE_DISTANCE

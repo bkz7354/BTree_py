@@ -32,7 +32,7 @@ def main():
 
     while not quit_flag:
         if not ani_manager.is_running():
-            ani_manager.queue_animation(box_manager.arrange_boxes())
+            ani_manager.queue_animation(box_manager.arrange_boxes([5, 2]))
         time_delta = clock.tick(60) / 1000.0
         ani_manager.update(time_delta)
 
