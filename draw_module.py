@@ -5,30 +5,37 @@ import colors as col
 
 pg.init()
 font = pg.font.SysFont("Times new Roman", 30)
-SCALE = 80
+SCALE = 50
+SHIFT=np.array([-10, -5])
+
 
 class Perspective:
-    def __init__(self):
-        pass
+    def __init__(self, pos_c, scale_f):
+        self.pos_c=pos_c
+        self.scale_f=scale_f
 
     def scale(self, vect):
+        return vect*self.scale_f
         # scales vector from relative to scrren coords
-        pass
 
     def shift(self, vect):
+        return vect-self.pos_c
         # shifts vector in relative coordinates
-        pass
 
     def get_coord(self, pos):
+        return self.scale(self.shift(pos))
+
         # gets screen coordinates from relative (shift + scale)
-        pass
 
     def get_box(self, pos, size):
+        pos=self.get_coord(pos)
+        size=self.scale(size)
+        return pos, size
         # scales and shifts the box
-        pass
 
-def scale_coords(coords):
-    return (coords*SCALE).astype(int)
+Ps=Perspective(SHIFT, SCALE)
+
+
 
 def get_rect(box):
     pos = box.pos
@@ -37,8 +44,7 @@ def get_rect(box):
 
     pos =  pos - box.padding/2
     size = box.size + box.padding
-
-    return scale_coords(pos), scale_coords(size)
+    return Ps.get_box(pos, size)
 
 def render_value(size, value):
     text = str(value).zfill(4)
@@ -60,8 +66,7 @@ def draw_value_box(box, surface):
     surface.blit(text_surf, (pos + (size-text_size)/2).astype(int))
 
 def draw_connection(conn, surface):
-    beg = scale_coords(conn.beg + conn.parent.pos)
-    end = scale_coords(conn.get_end())
+    beg, end = Ps.get_coord(np.array([conn.beg + conn.parent.pos, conn.get_end()]))
 
     pg.draw.aaline(surface, conn.color, beg, end, 2)
 

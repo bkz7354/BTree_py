@@ -26,7 +26,7 @@ def main():
     clock = pg.time.Clock()
 
     ani_manager = ani.AnimationManager()
-    box_manager = box.BoxManager(root_pos=[10,2])
+    box_manager = box.BoxManager()
     connector = Connector(ani_manager, box_manager)
     t = VisBtree(2, connector)
     for i in get_sample(100):
