@@ -22,8 +22,13 @@ def main():
     for i in range(5):
         ani_manager.queue_animation(node.insert_leaf(0, box_manager.new_value(i)))
     ani_manager.queue_animation(box_manager.arrange_boxes([5, 2]))
-    anim, node, _ = box_manager.split_root()
+    anim, node2, node3 = box_manager.split_root()
     ani_manager.queue_animation(anim)
+    for i in range(3):
+        ani_manager.queue_animation(node.insert_leaf(0, box_manager.new_value(i)))
+    anim, node4 = node2.split_child(0)
+    ani_manager.queue_animation(anim)
+
 
     while not quit_flag:
         if not ani_manager.is_running():

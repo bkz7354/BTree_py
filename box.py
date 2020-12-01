@@ -182,7 +182,13 @@ class NodeBox(Box):
                 child.adjust()
                 new_node.adjust()
 
-                return SequentialAnimation([value_move, node.manager.arrange_boxes([5, 2])])
+                def connect_callback(animation):
+                    node.manager.connect_nodes(node, new_node, c_idx+1)
+                    return animation
+
+                return SequentialAnimation([value_move, 
+                                            EmptyAnimation(connect_callback),
+                                            node.manager.arrange_boxes([5, 2])])
 
 
         return EmptyAnimation(begin_split(self)), new_node
