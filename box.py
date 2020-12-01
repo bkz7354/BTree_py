@@ -6,7 +6,7 @@ import copy
 import colors as col
 
 VALUEBOX_SIZE = np.array([1.0, 1.0])
-BOXMOVE_DURATION = 0.2
+BOXMOVE_DURATION = 0.1
 ROW_DISTANCE = VALUEBOX_SIZE[1]
 NODE_DISTANCE = VALUEBOX_SIZE[0]
 
@@ -133,7 +133,7 @@ class NodeBox(Box):
 
                 return ParallelAnimation([shift, resize, move])
 
-        return EmptyAnimation(insert_begin(self))
+        return SequentialAnimation([EmptyAnimation(insert_begin(self)), self.manager.arrange_boxes()])
     
     def split_insert(self, value_box, insert_idx):
         class insert_begin:
@@ -188,7 +188,7 @@ class NodeBox(Box):
 
                 return SequentialAnimation([value_move, 
                                             EmptyAnimation(connect_callback),
-                                            node.manager.arrange_boxes([5, 2])])
+                                            node.manager.arrange_boxes()])
 
 
         return EmptyAnimation(begin_split(self)), new_node
@@ -215,20 +215,22 @@ class Connection:
         return self.target.pos + [self.target.size[0]/2, 0]
 
 class BoxManager:
-    def __init__(self):
+    def __init__(self, root_pos=[5, 2], box_pos=[0,0]):
         self.values = {}
         self.nodes = {}
         self.connections = {}
     
         self.root_id = None
+        self.root_pos = root_pos
+        self.box_pos = box_pos
 
     def new_node(self):
-        res = NodeBox(self, [0, 0])
+        res = NodeBox(self, self.box_pos)
         self.nodes[res.u_id] = res
         return res
     
     def new_value(self, val):
-        res = ValueBox(self, [0,0], val)
+        res = ValueBox(self, self.box_pos, val)
         self.values[res.u_id] = res
         return res
     
@@ -241,7 +243,7 @@ class BoxManager:
     def set_root(self, node):
         self.root_id = node.u_id
 
-    def arrange_boxes(self, root_pos=[0, 0]):
+    def arrange_boxes(self):
         class begin_arrange:
             def __init__(self, manager, root_pos):
                 self.manager = manager
@@ -279,7 +281,7 @@ class BoxManager:
 
                 return ParallelAnimation(animation_list)
 
-        return EmptyAnimation(begin_arrange(self, root_pos))
+        return EmptyAnimation(begin_arrange(self, self.root_pos))
 
     def split_root(self):
         new_root = self.new_node()
@@ -315,11 +317,18 @@ class BoxManager:
 
                 self.manager.set_root(new_root)
 
-                return self.manager.arrange_boxes([5, 2])
+                return self.manager.arrange_boxes()
         
         return EmptyAnimation(begin_split(self)), new_root, new_node
 
+    def create_root(self, val):
+        root = self.new_node()
+        self.set_root(root)
 
+        root.contained_values.append(self.new_value(val))
+        root.adjust()
+
+        return self.arrange_boxes(), root
 
 class MoveBoxAnimation(SingularAnimation):
     def __init__(self, box, pos_from, pos_to, duration=BOXMOVE_DURATION):

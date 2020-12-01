@@ -4,6 +4,18 @@ import animation as ani
 import box
 import draw_module as draw
 import colors as col
+from connector import Connector
+from VisBTree import VisBtree
+import random as rnd
+
+min_int = 0
+max_int = 9999
+
+def get_sample(sample_size):
+    res = []
+    for _ in range(sample_size):
+        res.append(rnd.randint(min_int, max_int))
+    return res
 
 def main():
     quit_flag = False
@@ -13,26 +25,14 @@ def main():
 
     clock = pg.time.Clock()
 
-    
     ani_manager = ani.AnimationManager()
-    box_manager = box.BoxManager()
-
-    node = box_manager.new_node()
-    box_manager.set_root(node)
-    for i in range(5):
-        ani_manager.queue_animation(node.insert_leaf(0, box_manager.new_value(i)))
-    ani_manager.queue_animation(box_manager.arrange_boxes([5, 2]))
-    anim, node2, node3 = box_manager.split_root()
-    ani_manager.queue_animation(anim)
-    for i in range(3):
-        ani_manager.queue_animation(node.insert_leaf(0, box_manager.new_value(i)))
-    anim, node4 = node2.split_child(0)
-    ani_manager.queue_animation(anim)
-
+    box_manager = box.BoxManager(root_pos=[10,2])
+    connector = Connector(ani_manager, box_manager)
+    t = VisBtree(2, connector)
+    for i in get_sample(100):
+        t.insert(i)
 
     while not quit_flag:
-        if not ani_manager.is_running():
-            ani_manager.queue_animation(box_manager.arrange_boxes([5, 2]))
         time_delta = clock.tick(60) / 1000.0
         ani_manager.update(time_delta)
 
