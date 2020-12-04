@@ -249,23 +249,52 @@ class NodeBox(Box):
                 node.contained_values[c_idx] = value_l
                 value_c.tie_to()
 
-                insert_r = r.inner_insert(value_c, 0, 0)
+                insert_r = r.inner_insert(value_c, 0)
                 if l.connections:
-                    r.add_connection(l.connections[-1], 0)
+                    l.connections[-1].plug(r, 0)
                     del l.connections[-1]
 
                 return SequentialAnimation([ParallelAnimation([resize_l, move_l, insert_r]), node.manager.arrange_boxes()])
 
         return EmptyAnimation(rotate_begin(self))
-                
-                
     
     def rotate_ccw(self, c_idx):
-        pass
+        class rotate_begin:
+            def __init__(self, box):
+                self.box = box
+
+            def __call__(self, animation):
+                node = self.box
+                l = node.connections[c_idx].target
+                r = node.connections[c_idx+1].target
+
+                value_r = r.contained_values[0]
+                value_c = node.contained_values[c_idx]
+
+                del r.contained_values[0] 
+                if r.connections:
+                    r.connections[0].plug(l, len(l.connections))
+                    del r.connections[0]             
+                  
+                resize_r = r.resize(-1)
+                val_shift = r.shift_values(0, -1)
+                conn_shift = r.shift_connections(0, -1)
+
+                value_r.tie_to(node)
+                move_r = value_r.move(node.get_relative(c_idx))
+                node.contained_values[c_idx] = value_r
+                value_c.tie_to()
+
+                insert_l = l.inner_insert(value_c, len(l.contained_values), 2)
+
+                return SequentialAnimation([ParallelAnimation([resize_r, val_shift, conn_shift, move_r, insert_l]), node.manager.arrange_boxes()])
+
+        return EmptyAnimation(rotate_begin(self))
+            
 
     def add_connection(self, conn, idx):
         self.connections.insert(idx, conn)
-        conn.beg = self.get_relative(idx) + np.array([0, VALUEBOX_SIZE[1]])
+        conn.beg = self.get_relative(idx) + y_vector(VALUEBOX_SIZE[1])
 
     
     
