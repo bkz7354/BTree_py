@@ -34,7 +34,7 @@ class VisBtree:
             if self.is_leaf:
                 self.leaf_insert(pos, val)
                 
-                self.manager.insert_leaf(self, pos, val)
+                self.manager.leaf_insert(self, pos, val)
             else:
                 if self.c[pos].fill == 2*self.t-1:
                     self.split_child(pos)

@@ -6,7 +6,7 @@ import copy
 import colors as col
 
 VALUEBOX_SIZE = np.array([1.0, 1.0])
-BOXMOVE_DURATION = 0.1
+BOXMOVE_DURATION = 0.3
 ROW_DISTANCE = VALUEBOX_SIZE[1]
 NODE_DISTANCE = VALUEBOX_SIZE[0]
 
@@ -43,6 +43,13 @@ class ValueBox(Box):
         Box.__init__(self, manager, pos, VALUEBOX_SIZE, parent=parent)
         self.value = val
 
+    def tie_to(self, node=None):
+        if self.parent is not None:
+            self.pos =  self.pos + self.parent.pos
+        if node is not None:
+            self.pos = self.pos - node.pos
+        self.parent = node
+
 
 class NodeBox(Box):
     def __init__(self, manager, pos, parent=None):
@@ -67,12 +74,6 @@ class NodeBox(Box):
 
     def get_relative(self, pos):
         return x_vector(pos*VALUEBOX_SIZE[0])
-
-    def rel_from_abs(self, abs_pos):
-        return abs_pos - self.pos
-    
-    def abs_from_rel(self, rel_pos):
-        return self.pos + rel_pos
     
     def shift_values(self, pos, shift):
         class begin_shift:
@@ -118,7 +119,7 @@ class NodeBox(Box):
 
         return EmptyAnimation(begin_resize(self))
 
-    def insert_leaf(self, insert_idx, value_box):
+    def leaf_insert(self, insert_idx, value_box):
         class insert_begin:
             def __init__(self, box):
                 self.box = box
@@ -126,8 +127,7 @@ class NodeBox(Box):
                 shift = self.box.shift_values(insert_idx, 1)
                 resize = self.box.resize(1)
 
-                value_box.parent = self.box
-                value_box.pos = self.box.rel_from_abs(value_box.pos)
+                value_box.tie_to(self.box)
                 self.box.contained_values.insert(insert_idx, value_box)
                 move = value_box.move(self.box.get_relative(insert_idx))
 
@@ -135,18 +135,17 @@ class NodeBox(Box):
 
         return SequentialAnimation([EmptyAnimation(insert_begin(self)), self.manager.arrange_boxes()])
     
-    def split_insert(self, value_box, insert_idx):
+    def inner_insert(self, value_box, insert_idx, conn_delta=1):
         class insert_begin:
             def __init__(self, box):
                 self.box = box
 
             def __call__(self, animation):
                 val_shift = self.box.shift_values(insert_idx, 1)
-                conn_shift = self.box.shift_connections(insert_idx+1, 1)
+                conn_shift = self.box.shift_connections(insert_idx + conn_delta, 1)
                 resize = self.box.resize(1)
 
-                value_box.parent = self.box
-                value_box.pos = self.box.rel_from_abs(value_box.pos)
+                value_box.tie_to(self.box)
                 self.box.contained_values.insert(insert_idx, value_box)
                 move = value_box.move(self.box.get_relative(insert_idx))
 
@@ -167,9 +166,8 @@ class NodeBox(Box):
 
                 median = len(child.contained_values)//2
                 moved_value = child.contained_values[median]
-                moved_value.pos = moved_value.pos + child.pos
-                moved_value.parent = None
-                value_move = node.split_insert(moved_value, c_idx)
+                moved_value.tie_to()
+                value_move = node.inner_insert(moved_value, c_idx)
 
                 new_node.pos = child.pos + x_vector(VALUEBOX_SIZE[0]*(median+1))
                 new_node.contained_values = child.contained_values[median+1:]
@@ -192,6 +190,78 @@ class NodeBox(Box):
 
 
         return EmptyAnimation(begin_split(self)), new_node
+
+    def leaf_remove(self, remove_idx):
+        class begin_remove:
+            def __init__(self, box):
+                self.box = box
+            
+            def __call__(self, animation):
+                shift = self.box.shift_values(remove_idx+1, -1)
+                resize = self.box.resize(-1)
+
+                removed_value = self.box.contained_values[remove_idx]
+                removed_value.pos = removed_value.pos + self.box.pos
+                removed_value.parent = None
+
+                return ParallelAnimation([shift, resize])
+
+        return EmptyAnimation(begin_remove(self)), self.contained_values[remove_idx]
+
+    def pull_max(self, replace_idx, pull_node):
+        class pull_begin:
+            def __init__(self, box):
+                self.box = box
+            def __call__(self, animation):
+                moved_box = pull_node.contained_values[-1]
+                del pull_node.contained_values[-1]
+                resize = pull_node.resize(-1)
+                replaced_box = self.box.contained_values[replace_idx]
+
+                replaced_box.tie_to()
+                self.box.manager.delete_value(replaced_box)
+                
+                moved_box.parent.tie_to(self.box)
+                self.box.contained_values[replace_idx] = moved_box
+                move = moved_box.move(self.box.get_relative(replace_idx))
+
+                return ParallelAnimation([resize, move])
+
+        return EmptyAnimation(pull_begin(self))
+
+    def rotate_cw(self, c_idx):
+        class rotate_begin:
+            def __init__(self, box):
+                self.box = box
+
+            def __call__(self, animation):
+                node = self.box
+                l = node.connections[c_idx].target
+                r = node.connections[c_idx+1].target
+
+                value_l = l.contained_values[-1]
+                value_c = node.contained_values[c_idx]
+                
+                resize_l = l.resize(-1)
+                del l.contained_values[-1]
+                value_l.tie_to(node)
+                move_l = value_l.move(node.get_relative(c_idx))
+                node.contained_values[c_idx] = value_l
+                value_c.tie_to()
+
+                insert_r = r.inner_insert(value_c, 0, 0)
+                if l.connections:
+                    r.add_connection(l.connections[-1], 0)
+                    del l.connections[-1]
+
+                return SequentialAnimation([ParallelAnimation([resize_l, move_l, insert_r]), node.manager.arrange_boxes()])
+
+        return EmptyAnimation(rotate_begin(self))
+                
+                
+    
+    def rotate_ccw(self, c_idx):
+        pass
 
     def add_connection(self, conn, idx):
         self.connections.insert(idx, conn)
@@ -220,7 +290,7 @@ class BoxManager:
         self.nodes = {}
         self.connections = {}
     
-        self.root_id = None
+        self.root = None
         self.root_pos = root_pos
         self.box_pos = box_pos
 
@@ -234,6 +304,27 @@ class BoxManager:
         self.values[res.u_id] = res
         return res
     
+    def delete_value(self, value_box):
+        def callback(animation):
+            if value_box.u_id in self.values:
+                del self.values[value_box.u_id]
+            return animation
+        return EmptyAnimation(callback)
+
+    def delete_node(self, node_box):
+        def callback(animation):
+            if node_box.u_id in self.nodes:
+                del self.nodes[node_box.u_id]
+            return animation
+        return EmptyAnimation(callback)
+
+    def delete_connection(self, conn):
+        def callback(animation):
+            if conn.u_id in self.connections:
+                del self.connections[conn.u_id]
+            return animation
+        return EmptyAnimation(callback)
+
     def connect_nodes(self, parent_node, child_node, c_idx):
         conn = Connection(child_node)
         conn.plug(parent_node, c_idx)
@@ -241,7 +332,7 @@ class BoxManager:
         return conn
 
     def set_root(self, node):
-        self.root_id = node.u_id
+        self.root = node
 
     def arrange_boxes(self):
         class begin_arrange:
@@ -250,13 +341,13 @@ class BoxManager:
                 self.root_pos = root_pos
             
             def __call__(self, animation):
-                if self.manager.root_id is None:
+                if self.manager.root is None:
                     return EmptyAnimation()
 
                 root_pos = np.array(self.root_pos)
                 animation_list = []
 
-                root = self.manager.nodes[self.manager.root_id]
+                root = self.manager.root
                 animation_list.append(root.move(root_pos - np.array([root.size[0]/2, 0])))
                 center_x, root_y = root_pos
 
@@ -292,7 +383,7 @@ class BoxManager:
                 self.manager = manager
 
             def __call__(self, animation):
-                old_root = self.manager.nodes[self.manager.root_id]
+                old_root = self.manager.root
 
                 median = len(old_root.contained_values)//2
 
@@ -329,6 +420,7 @@ class BoxManager:
         root.adjust()
 
         return self.arrange_boxes(), root
+    
 
 class MoveBoxAnimation(SingularAnimation):
     def __init__(self, box, pos_from, pos_to, duration=BOXMOVE_DURATION):

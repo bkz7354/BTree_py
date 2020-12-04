@@ -28,14 +28,16 @@ def main():
     ani_manager = ani.AnimationManager()
     box_manager = box.BoxManager()
     connector = Connector(ani_manager, box_manager)
-    t = VisBtree(2, connector)
-    for i in get_sample(100):
+    t = VisBtree(3, connector)
+    for i in get_sample(10):
         t.insert(i)
 
     while not quit_flag:
         time_delta = clock.tick(60) / 1000.0
         ani_manager.update(time_delta)
 
+        if ani_manager.is_running() == False:
+            ani_manager.queue_animation(box_manager.root.rotate_cw(0))
 
         screen.fill(col.LIGHT_PURPLE)
         for event in pg.event.get():
