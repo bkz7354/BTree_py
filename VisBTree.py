@@ -74,6 +74,7 @@ class VisBtree:
 
             if pos < self.fill and self.key[pos] == val:
                 if self.is_leaf:
+                    self.manager.leaf_remove(self, pos)
                     self.leaf_remove(pos)
                 else:
                     self.inner_remove(pos)
@@ -91,6 +92,7 @@ class VisBtree:
                 self.key[i] = self.key[i+1]
         
         def inner_remove(self, r_id):
+            self.manager.pull_max(self, r_id)
             self.key[r_id] = self.c[r_id].get_max()
             self.c[r_id].remove_max()
             self.balance(r_id)
@@ -99,6 +101,11 @@ class VisBtree:
             if self.is_leaf:
                 return self.key[self.fill-1]
             return self.c[self.fill].get_max()
+
+        def get_max_node(self):
+            if self.is_leaf:
+                return self
+            return self.c[self.fill].get_max_node()
         
         def remove_max(self):
             if self.is_leaf:
@@ -113,11 +120,15 @@ class VisBtree:
 
             if r_id > 0 and self.c[r_id-1].fill > self.t-1:
                 self.rotate_cw(r_id-1)
+                self.manager.rotate_cw(self, r_id-1)
             elif r_id < self.fill and self.c[r_id+1].fill > self.t-1:
                 self.rotate_ccw(r_id)
+                self.manager.rotate_ccw(self, r_id)
             elif r_id > 0:
+                self.manager.merge_children(self, r_id-1)
                 self.merge_children(r_id-1)
             else:
+                self.manager.merge_children(self, r_id)
                 self.merge_children(r_id)
 
         def rotate_cw(self, c_id):
@@ -226,8 +237,10 @@ class VisBtree:
         self.root.remove(val)
         if self.root.fill == 0:
             if self.root.is_leaf:
+                self.manager.delete_root(self.root)
                 self.root = None
             else:
+                self.manager.change_root(self.root, self.root.c[0])
                 self.root = self.root.c[0]
     
     def find(self, val):

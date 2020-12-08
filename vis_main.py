@@ -29,17 +29,27 @@ def main():
     box_manager = box.BoxManager()
     connector = Connector(ani_manager, box_manager)
     t = VisBtree(2, connector)
-    for i in get_sample(15):
+    box.BOXMOVE_DURATION = 0.1
+    
+    spd = 2
+    samp = get_sample(20)
+    print(samp)
+    for i in samp: 
         t.insert(i)
+    
 
-    Do = True
+    do1 = True
     while not quit_flag:
         time_delta = clock.tick(60) / 1000.0
-        ani_manager.update(time_delta)
+        ani_manager.update(time_delta*spd)
 
-        if ani_manager.is_running() == False and Do:
-            ani_manager.queue_animation(box_manager.root.rotate_cw(0))
-            ani_manager.queue_animation(box_manager.root.rotate_ccw(0))
+        if not ani_manager.is_running() and do1:
+            spd = 1.0
+            rnd.shuffle(samp)
+            while len(samp) > 0:
+                t.remove(samp[0])
+                del samp[0]
+            do1 = False
 
         screen.fill(col.LIGHT_PURPLE)
         for event in pg.event.get():
