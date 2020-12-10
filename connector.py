@@ -21,7 +21,7 @@ class Connector:
     
     def leaf_insert(self, node, pos, val):
         box = self.node_boxes[node.u_id]
-
+    
         ani = box.leaf_insert(pos, self.box_manager.new_value(val))
         self.ani_manager.queue_animation(ani)
 

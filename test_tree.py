@@ -8,7 +8,7 @@ max_int = 100
 
 def get_sample(sample_size):
     res = []
-    for i in range(sample_size):
+    for _ in range(sample_size):
         res.append(rnd.randint(min_int, max_int))
     return res
 

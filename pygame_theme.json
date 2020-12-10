@@ -1,0 +1,13 @@
+{
+    "defaults":
+    {
+        "colours":
+        {
+           "normal_bg": "#62bfed",
+           "hovered_bg": "#8fb8ed",
+           "normal_text": "#000000",
+           "hovered_text": "#000000",
+           "dark_bg": "#3590f3"
+        }
+    }
+}

@@ -18,6 +18,7 @@ def y_vector(y):
 
 class Box:
     def __init__(self, manager, pos, size, parent=None, padding=0):
+        self.display = False
         self.u_id = uuid.uuid1()
         self.size = np.array(size)
         self.pos  = np.array(pos)
@@ -53,7 +54,7 @@ class ValueBox(Box):
 
 class NodeBox(Box):
     def __init__(self, manager, pos, parent=None):
-        Box.__init__(self, manager, pos, VALUEBOX_SIZE, parent=parent, padding=0.1)
+        Box.__init__(self, manager, pos, VALUEBOX_SIZE, parent=parent, padding=0.05)
         self.contained_values = []
         self.connections = []
 
@@ -128,6 +129,7 @@ class NodeBox(Box):
                 resize = self.box.resize(1)
 
                 value_box.tie_to(self.box)
+                value_box.display = True
                 self.box.contained_values.insert(insert_idx, value_box)
                 move = value_box.move(self.box.get_relative(insert_idx))
 
@@ -171,6 +173,7 @@ class NodeBox(Box):
 
                 new_node.pos = child.pos + x_vector(VALUEBOX_SIZE[0]*(median+1))
                 new_node.contained_values = child.contained_values[median+1:]
+                new_node.display = True
                 for i, conn in enumerate(child.connections[median+1:]):
                     conn.plug(new_node, i)
 
@@ -192,7 +195,6 @@ class NodeBox(Box):
         return EmptyAnimation(begin_split(self)), new_node
 
     def leaf_remove(self, remove_idx):
-        print("leaf remove")
         class begin_remove:
             def __init__(self, box):
                 self.box = box
@@ -205,12 +207,11 @@ class NodeBox(Box):
                 del self.box.contained_values[remove_idx]
                 r_ani = self.box.manager.delete_value(removed_value)
 
-                return ParallelAnimation([shift, resize, r_ani])
+                return SequentialAnimation([ParallelAnimation([shift, resize, r_ani]), self.box.manager.arrange_boxes()])
 
         return EmptyAnimation(begin_remove(self))
 
     def pull_max(self, replace_idx, pull_node):
-        print("pull_max")
         class pull_begin:
             def __init__(self, box):
                 self.box = box
@@ -232,7 +233,6 @@ class NodeBox(Box):
         return EmptyAnimation(pull_begin(self))
 
     def rotate_cw(self, c_idx):
-        print("rotate_cw")
         class rotate_begin:
             def __init__(self, box):
                 self.box = box
@@ -262,7 +262,6 @@ class NodeBox(Box):
         return EmptyAnimation(rotate_begin(self))
     
     def rotate_ccw(self, c_idx):
-        print("rotate_ccw")
         class rotate_begin:
             def __init__(self, box):
                 self.box = box
@@ -296,7 +295,6 @@ class NodeBox(Box):
         return EmptyAnimation(rotate_begin(self))
 
     def merge_children(self, c_idx):
-        print("merge_children")
         class merge_begin:
             def __init__(self, box):
                 self.box = box
@@ -463,7 +461,9 @@ class BoxManager:
                 median = len(old_root.contained_values)//2
 
                 new_root.pos = old_root.pos + np.array([VALUEBOX_SIZE[0]*median, 0])        
+                new_root.display = True
                 new_node.pos = old_root.pos + np.array([VALUEBOX_SIZE[0]*(median + 1), 0])
+                new_node.display = True
 
                 new_root.contained_values.append(old_root.contained_values[median])
                 
@@ -492,7 +492,9 @@ class BoxManager:
         self.set_root(root)
 
         root.contained_values.append(self.new_value(val))
+        root.contained_values[0].display = True
         root.adjust()
+        root.display = True
 
         return self.arrange_boxes(), root
 
@@ -543,7 +545,6 @@ class ResizeBoxAnimation(SingularAnimation):
 
 class MoveConnAnimation(SingularAnimation):
     def __init__(self, conn, pos_from, pos_to, duration=BOXMOVE_DURATION):
-        #print("move box: ", pos_from, pos_to)
         SingularAnimation.__init__(self, duration)
         self.fr = np.array(pos_from)
         self.to = np.array(pos_to)
