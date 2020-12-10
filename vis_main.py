@@ -54,7 +54,7 @@ def main():
                 tree.insert(event.value)
                 tree_contents.append(event.value)
             elif event.type == GUI.REMOVE_EVENT:
-                if tree_contents:
+                if event.value in tree_contents:
                     tree.remove(event.value)
                     tree_contents.remove(event.value)
             elif event.type == GUI.INSERT_RNG_EVENT:
