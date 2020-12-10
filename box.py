@@ -36,7 +36,7 @@ class Box:
             def __call__(self, animation):
                 return MoveBoxAnimation(self.box, self.box.pos, pos)
         
-        return CallbackAnimation(move_begin(pos, self))
+        return EmptyAnimation(move_begin(pos, self))
     
 
 class ValueBox(Box):
@@ -90,7 +90,7 @@ class NodeBox(Box):
 
                 return ParallelAnimation(animation_list)
 
-        return CallbackAnimation(begin_shift(self, pos, shift))
+        return EmptyAnimation(begin_shift(self, pos, shift))
 
     def shift_connections(self, pos, shift):
         class begin_shift:
@@ -106,7 +106,7 @@ class NodeBox(Box):
 
                 return ParallelAnimation(animation_list)
 
-        return CallbackAnimation(begin_shift(self, pos, shift))
+        return EmptyAnimation(begin_shift(self, pos, shift))
 
 
     def resize(self, shift):
@@ -118,7 +118,7 @@ class NodeBox(Box):
             def __call__(self, animation):
                 return ResizeBoxAnimation(self.box, self.box.size, self.box.size + self.move_vect)
 
-        return CallbackAnimation(begin_resize(self))
+        return EmptyAnimation(begin_resize(self))
 
     def leaf_insert(self, insert_idx, value_box):
         class insert_begin:
@@ -135,7 +135,7 @@ class NodeBox(Box):
 
                 return ParallelAnimation([shift, resize, move])
 
-        return SequentialAnimation([CallbackAnimation(insert_begin(self)), self.manager.arrange_boxes()])
+        return SequentialAnimation([EmptyAnimation(insert_begin(self)), self.manager.arrange_boxes()])
     
     def inner_insert(self, value_box, insert_idx, conn_delta=1):
         class insert_begin:
@@ -153,7 +153,7 @@ class NodeBox(Box):
 
                 return ParallelAnimation([val_shift, conn_shift, resize, move])
 
-        return CallbackAnimation(insert_begin(self))
+        return EmptyAnimation(insert_begin(self))
 
     def split_child(self, c_idx):
         new_node = self.manager.new_node()
@@ -188,11 +188,11 @@ class NodeBox(Box):
                     return animation
 
                 return SequentialAnimation([value_move, 
-                                            CallbackAnimation(connect_callback),
+                                            EmptyAnimation(connect_callback),
                                             node.manager.arrange_boxes()])
 
 
-        return CallbackAnimation(begin_split(self)), new_node
+        return EmptyAnimation(begin_split(self)), new_node
 
     def leaf_remove(self, remove_idx):
         class begin_remove:
@@ -209,7 +209,7 @@ class NodeBox(Box):
 
                 return SequentialAnimation([ParallelAnimation([shift, resize, r_ani]), self.box.manager.arrange_boxes()])
 
-        return CallbackAnimation(begin_remove(self))
+        return EmptyAnimation(begin_remove(self))
 
     def pull_max(self, replace_idx, pull_node):
         class pull_begin:
@@ -230,7 +230,7 @@ class NodeBox(Box):
 
                 return ParallelAnimation([resize, move, del_ani])
 
-        return CallbackAnimation(pull_begin(self))
+        return EmptyAnimation(pull_begin(self))
 
     def rotate_cw(self, c_idx):
         class rotate_begin:
@@ -259,7 +259,7 @@ class NodeBox(Box):
 
                 return SequentialAnimation([ParallelAnimation([resize_l, move_l, insert_r]), node.manager.arrange_boxes()])
 
-        return CallbackAnimation(rotate_begin(self))
+        return EmptyAnimation(rotate_begin(self))
     
     def rotate_ccw(self, c_idx):
         class rotate_begin:
@@ -292,7 +292,7 @@ class NodeBox(Box):
 
                 return SequentialAnimation([ParallelAnimation([resize_r, val_shift, conn_shift, move_r, insert_l]), node.manager.arrange_boxes()])
 
-        return CallbackAnimation(rotate_begin(self))
+        return EmptyAnimation(rotate_begin(self))
 
     def merge_children(self, c_idx):
         class merge_begin:
@@ -334,7 +334,7 @@ class NodeBox(Box):
 
                 return SequentialAnimation([ParallelAnimation(animations), node.manager.arrange_boxes()])
 
-        return CallbackAnimation(merge_begin(self))
+        return EmptyAnimation(merge_begin(self))
 
     def add_connection(self, conn, idx):
         self.connections.insert(idx, conn)
@@ -382,21 +382,21 @@ class BoxManager:
             if value_box.u_id in self.values:
                 del self.values[value_box.u_id]
             return animation
-        return CallbackAnimation(callback)
+        return EmptyAnimation(callback)
 
     def delete_node(self, node_box):
         def callback(animation):
             if node_box.u_id in self.nodes:
                 del self.nodes[node_box.u_id]
             return animation
-        return CallbackAnimation(callback)
+        return EmptyAnimation(callback)
 
     def delete_connection(self, conn):
         def callback(animation):
             if conn.u_id in self.connections:
                 del self.connections[conn.u_id]
             return animation
-        return CallbackAnimation(callback)
+        return EmptyAnimation(callback)
 
     def connect_nodes(self, parent_node, child_node, c_idx):
         conn = Connection(child_node)
@@ -415,7 +415,7 @@ class BoxManager:
             
             def __call__(self, animation):
                 if self.manager.root is None:
-                    return CallbackAnimation()
+                    return EmptyAnimation()
 
                 root_pos = np.array(self.root_pos)
                 animation_list = []
@@ -445,7 +445,7 @@ class BoxManager:
 
                 return ParallelAnimation(animation_list)
 
-        return CallbackAnimation(begin_arrange(self, self.root_pos))
+        return EmptyAnimation(begin_arrange(self, self.root_pos))
 
     def split_root(self):
         new_root = self.new_node()
@@ -485,7 +485,7 @@ class BoxManager:
 
                 return self.manager.arrange_boxes()
         
-        return CallbackAnimation(begin_split(self)), new_root, new_node
+        return EmptyAnimation(begin_split(self)), new_root, new_node
 
     def create_root(self, val):
         root = self.new_node()
@@ -507,7 +507,7 @@ class BoxManager:
 
             return SequentialAnimation([ParallelAnimation(animations), self.arrange_boxes()])
 
-        return CallbackAnimation(callback)
+        return EmptyAnimation(callback)
     
     def delete_root(self):
         def callback(animation):
@@ -516,7 +516,7 @@ class BoxManager:
 
             return r_ani
         
-        return CallbackAnimation(callback) 
+        return EmptyAnimation(callback) 
 
 class MoveBoxAnimation(SingularAnimation):
     def __init__(self, box, pos_from, pos_to, duration=BOXMOVE_DURATION):
