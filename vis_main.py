@@ -8,6 +8,7 @@ import colors as col
 from connector import Connector
 from VisBTree import VisBtree
 import random as rnd
+import copy
 
 min_int = 0
 max_int = 9999
@@ -17,6 +18,12 @@ def get_sample(sample_size):
     for _ in range(sample_size):
         res.append(rnd.randint(min_int, max_int))
     return res
+
+def select_random(val_list, n):
+    list_copy = val_list.copy()
+    rnd.shuffle(list_copy)
+    return list_copy[0:n]
+
 
 def main():
     quit_flag = False
@@ -30,19 +37,9 @@ def main():
     ani_manager = ani.AnimationManager()
     box_manager = box.BoxManager()
     connector = Connector(ani_manager, box_manager)
-    t = VisBtree(3, connector)
-    box.BOXMOVE_DURATION = 0.1
-    
-    spd = 2
-    samp = get_sample(30)
-    print(samp)
-    for i in samp: 
-        t.insert(i)
-    rnd.shuffle(samp)
-    while len(samp) > 0:
-        t.remove(samp[0])
-        del samp[0]
-    
+
+    tree = VisBtree(3, connector)
+    tree_contents = []
 
     while not quit_flag:
         time_delta = clock.tick(60) / 1000.0
@@ -53,7 +50,21 @@ def main():
             GUI_manager.process_event(event)
             if event.type == pg.QUIT:
                 quit_flag = True
-
+            elif event.type == GUI.INSERT_EVENT:
+                tree.insert(event.value)
+                tree_contents.append(event.value)
+            elif event.type == GUI.REMOVE_EVENT:
+                if event.value in tree_contents:
+                    tree.remove(event.value)
+                    tree_contents.remove(event.value)
+            elif event.type == GUI.INSERT_RNG_EVENT:
+                for x in get_sample(event.value):
+                    tree.insert(x)
+                    tree_contents.append(x)
+            elif event.type == GUI.REMOVE_RNG_EVENT:
+                for x in select_random(tree_contents, event.value):
+                    tree.remove(x)
+                    tree_contents.remove(x)
 
         screen.fill(col.LIGHT_PURPLE)
         draw.draw_objects(box_manager.nodes, box_manager.values, box_manager.connections, screen)

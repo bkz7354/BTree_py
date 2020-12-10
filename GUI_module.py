@@ -3,7 +3,14 @@ import pygame_gui as pgui
 import math
 
 
+INSERT_EVENT = pg.USEREVENT + 1
+REMOVE_EVENT = pg.USEREVENT + 2
+INSERT_RNG_EVENT = pg.USEREVENT + 3
+REMOVE_RNG_EVENT = pg.USEREVENT + 4
+
+
 def truncate(number, digits):
+    # rounds the number to a suitable amount of digits
     stepper = 10.0 ** digits
     return math.trunc(stepper * number) / stepper
 
@@ -16,8 +23,7 @@ class InterfaceManager:
 
     def __init__(self, screen, theme_path):
         self.screen = screen
-        # this variable tells whether the simulation is running right now
-        self.is_running = False
+        
         self.window_width = screen.get_width()
         self.window_height = screen.get_height()
 
@@ -85,11 +91,25 @@ class InterfaceManager:
                                                             speed_range, self.manager,
                                                             anchors=anchors)
 
+    def handle_button_press(self, event_type):
+        string = self.textEntry.get_text()
+        if string:
+            pg.event.post(pg.event.Event(event_type, value=int(string)))
+
     def process_event(self, event):
         self.manager.process_events(event)
 
         if event.type == pg.USEREVENT:
-            pass
+            if event.user_type == pgui.UI_BUTTON_PRESSED:
+                if event.ui_element == self.insertButton:
+                    self.handle_button_press(INSERT_EVENT)
+                elif event.ui_element == self.removeButton:
+                    self.handle_button_press(REMOVE_EVENT)
+                elif event.ui_element == self.insertRandomButton:
+                    self.handle_button_press(INSERT_RNG_EVENT)
+                elif event.ui_element == self.removeRandomButton:
+                    self.handle_button_press(REMOVE_RNG_EVENT)
+                    
 
     def get_speed(self):
         return self.speedSlider.get_current_value()
