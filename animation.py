@@ -1,7 +1,16 @@
 
-class EmptyAnimation:
+
+class BaseAnimation:
     def __init__(self, callback=None):
         self.callback = callback
+    def update(self, time_delta):
+        return self
+    def is_done(self):
+        return True
+
+class CallbackAnimation(BaseAnimation):
+    def __init__(self, callback=None):
+        super().__init__(callback)
         self.done = False
     
     def update(self, time_delta):
@@ -18,8 +27,9 @@ class EmptyAnimation:
     
 
 
-class SingularAnimation:
+class SingularAnimation(BaseAnimation):
     def __init__(self, duration, callback=None):
+        super().__init__(callback)
         self.progress = 0
         self.duration = duration
         self.callback = callback
@@ -38,15 +48,15 @@ class SingularAnimation:
         return self
 
     def update_objects(self):
-        pass
+        return self
 
     def is_done(self):
         return self.progress >= 1
 
-class SequentialAnimation:
+class SequentialAnimation(BaseAnimation):
     def __init__(self, animation_list, callback=None):
+        super().__init__(callback)
         self.animations = animation_list
-        self.callback = callback
 
     def update(self, time_delta):
         if self.is_done():
@@ -63,10 +73,10 @@ class SequentialAnimation:
     def is_done(self):
         return len(self.animations) == 0
 
-class ParallelAnimation:
+class ParallelAnimation(BaseAnimation):
     def __init__(self, animation_list, callback=None):
+        super().__init__(callback)
         self.animations = animation_list
-        self.callback = callback
 
     def update(self, time_delta):
         if self.is_done():
@@ -74,7 +84,6 @@ class ParallelAnimation:
 
         for i, a in enumerate(self.animations):
             self.animations[i] = a.update(time_delta)
-            
 
         if self.is_done() and self.callback is not None:
             return self.callback(self)
