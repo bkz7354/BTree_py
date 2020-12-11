@@ -44,7 +44,7 @@ def main():
     while not quit_flag:
         time_delta = clock.tick(60) / 1000.0
         ani_manager.update(time_delta*GUI_manager.get_speed())
-
+        
 
         for event in pg.event.get():
             GUI_manager.process_event(event)

@@ -48,7 +48,7 @@ class SingularAnimation(BaseAnimation):
         return self
 
     def update_objects(self):
-        return self
+        pass
 
     def is_done(self):
         return self.progress >= 1
