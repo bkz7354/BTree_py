@@ -26,7 +26,7 @@ class Perspective:
         if box.parent is not None:
             pos += box.parent.pos
 
-        size = box.size + 2*box.padding*np.array([1,1])
+        size = box.size + 3*box.padding*np.array([1,1])
 
         return self.screen_coord(pos), self.scale(size)
 
