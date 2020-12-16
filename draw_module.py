@@ -15,6 +15,9 @@ class Perspective:
     def change_focus(self, dx_px, dy_px):
         self.pos_c = self.pos_c - np.array([dx_px, dy_px]).astype(float)/self.scale_factor
 
+    def change_zoom(self, new_scale):
+        self.scale_factor = new_scale
+
     def scale(self, vect):
         return vect*self.scale_factor
 
