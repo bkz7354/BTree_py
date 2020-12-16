@@ -44,7 +44,7 @@ def main():
     while not quit_flag:
         time_delta = clock.tick(60) / 1000.0
         ani_manager.update(time_delta*GUI_manager.get_speed())
-
+        
 
         for event in pg.event.get():
             GUI_manager.process_event(event)
@@ -54,7 +54,7 @@ def main():
                 tree.insert(event.value)
                 tree_contents.append(event.value)
             elif event.type == GUI.REMOVE_EVENT:
-                if tree_contents:
+                if event.value in tree_contents:
                     tree.remove(event.value)
                     tree_contents.remove(event.value)
             elif event.type == GUI.INSERT_RNG_EVENT:

@@ -32,6 +32,7 @@ class SingularAnimation(BaseAnimation):
         super().__init__(callback)
         self.progress = 0
         self.duration = duration
+        self.callback = callback
 
     def update(self, time_delta):
         if self.is_done():
@@ -47,7 +48,7 @@ class SingularAnimation(BaseAnimation):
         return self
 
     def update_objects(self):
-        return self
+        pass
 
     def is_done(self):
         return self.progress >= 1

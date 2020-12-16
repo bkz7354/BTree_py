@@ -33,6 +33,8 @@ class InterfaceManager:
         self.init_buttons()
         self.init_speed_slider([0.0, 3.0])
 
+        self.mouse_drag = False
+
 
     def init_text_entry(self):
         textRect = pg.Rect(0, 0, 180, 29)
@@ -109,14 +111,31 @@ class InterfaceManager:
                     self.handle_button_press(INSERT_RNG_EVENT)
                 elif event.ui_element == self.removeRandomButton:
                     self.handle_button_press(REMOVE_RNG_EVENT)
-                    
+        elif event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+            self.begin_mouse_drag()
+        elif event.type == pg.MOUSEBUTTONUP and event.button == 1:
+            self.end_mouse_drag()
 
     def get_speed(self):
         return self.speedSlider.get_current_value()
 
     def update_displayed_speed(self):
         self.speedLabel.set_text("speed: " + str(truncate(self.get_speed(), 1)))
-            
+    
+    def begin_mouse_drag(self):
+        if not self.mouse_drag:
+            self.mouse_drag = True
+            pg.mouse.get_rel()
+    
+    def get_mouse_move(self):
+        if self.mouse_drag:
+            return pg.mouse.get_rel()
+        
+        return (0,0)
+
+    def end_mouse_drag(self):
+        self.mouse_drag = False
+        
     def update(self, time_delta):
         self.update_displayed_speed()
         self.manager.update(time_delta)
