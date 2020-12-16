@@ -1,6 +1,7 @@
 import pygame as pg
 import pygame_gui as pgui
 import math
+import colors as col
 
 
 INSERT_EVENT = pg.USEREVENT + 1
@@ -29,6 +30,10 @@ class InterfaceManager:
 
         self.manager = pgui.UIManager((self.window_width, self.window_height), theme_path)
 
+
+        self.box_height = 29
+        self.gui_height = self.box_height + 20
+
         self.init_text_entry()
         self.init_buttons()
         self.init_speed_slider([0.0, 3.0])
@@ -37,7 +42,7 @@ class InterfaceManager:
 
 
     def init_text_entry(self):
-        textRect = pg.Rect(0, 0, 180, 29)
+        textRect = pg.Rect(0, 0, 180, self.box_height)
         textRect.bottomleft = (10, -10)
     
         self.textEntry = pgui.elements.UITextEntryLine(
@@ -122,8 +127,13 @@ class InterfaceManager:
     def update_displayed_speed(self):
         self.speedLabel.set_text("speed: " + str(truncate(self.get_speed(), 1)))
     
+    def get_mouse_y(self):
+        x, y = pg.mouse.get_pos()
+
+        return y
+
     def begin_mouse_drag(self):
-        if not self.mouse_drag:
+        if not self.mouse_drag and self.get_mouse_y() < self.window_height - self.gui_height:
             self.mouse_drag = True
             pg.mouse.get_rel()
     
@@ -136,9 +146,12 @@ class InterfaceManager:
     def end_mouse_drag(self):
         self.mouse_drag = False
         
-    def update(self, time_delta):
+    def update_and_draw(self, time_delta):
         self.update_displayed_speed()
         self.manager.update(time_delta)
+
+        pg.draw.rect(self.screen, col.PURPLE, (0, self.window_height - self.gui_height, 
+                                                  self.window_width, self.gui_height))
         self.manager.draw_ui(self.screen)
 
 

@@ -29,7 +29,7 @@ def main():
     quit_flag = False
     pg.init()
 
-    screen = pg.display.set_mode((1600, 1000))
+    screen = pg.display.set_mode((1200, 800))
     GUI_manager = GUI.InterfaceManager(screen, 'pygame_theme.json') 
 
     clock = pg.time.Clock()
@@ -70,7 +70,7 @@ def main():
 
         screen.fill(col.LIGHT_PURPLE)
         draw.draw_objects(box_manager.nodes, box_manager.values, box_manager.connections, screen)
-        GUI_manager.update(time_delta)
+        GUI_manager.update_and_draw(time_delta)
         pg.display.update()
     
     
