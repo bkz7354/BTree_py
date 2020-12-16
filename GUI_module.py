@@ -131,7 +131,7 @@ class InterfaceManager:
         if self.mouse_drag:
             return pg.mouse.get_rel()
         
-        return (0,0)
+        return (0, 0)
 
     def end_mouse_drag(self):
         self.mouse_drag = False

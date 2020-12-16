@@ -66,7 +66,7 @@ def main():
                     tree.remove(x)
                     tree_contents.remove(x)
 
-
+        draw.persp.change_focus(*GUI_manager.get_mouse_move())
 
         screen.fill(col.LIGHT_PURPLE)
         draw.draw_objects(box_manager.nodes, box_manager.values, box_manager.connections, screen)
