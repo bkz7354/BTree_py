@@ -162,14 +162,18 @@ class NodeBox(Box):
 
             def __call__(self, animation):
                 val_shift = self.box.shift_values(insert_idx, 1)
-                conn_shift = self.box.shift_connections(insert_idx + conn_delta, 1)
+                conn_shift = self.box.shift_connections(
+                    insert_idx + conn_delta, 1
+                )
                 resize = self.box.resize(1)
 
                 value_box.tie_to(self.box)
                 self.box.contained_values.insert(insert_idx, value_box)
                 move = value_box.move(self.box.get_relative(insert_idx))
 
-                return ParallelAnimation([val_shift, conn_shift, resize, move])
+                return ParallelAnimation([
+                    val_shift, conn_shift, resize, move
+                ])
 
         return CallbackAnimation(insert_begin(self))
 
@@ -189,7 +193,8 @@ class NodeBox(Box):
                 moved_value.tie_to()
                 value_move = node.inner_insert(moved_value, c_idx)
 
-                new_node.pos = child.pos + x_vector(VALUEBOX_SIZE[0]*(median+1))
+                new_node.pos = child.pos + \
+                    x_vector(VALUEBOX_SIZE[0]*(median+1))
                 new_node.contained_values = child.contained_values[median+1:]
                 new_node.display = True
                 for i, conn in enumerate(child.connections[median+1:]):
@@ -205,9 +210,10 @@ class NodeBox(Box):
                     node.manager.connect_nodes(node, new_node, c_idx+1)
                     return animation
 
-                return SequentialAnimation([value_move, 
-                                            CallbackAnimation(connect_callback),
-                                            node.manager.arrange_boxes()])
+                return SequentialAnimation([
+                    value_move, CallbackAnimation(connect_callback),
+                    node.manager.arrange_boxes()
+                ])
 
 
         return CallbackAnimation(begin_split(self)), new_node
@@ -225,7 +231,10 @@ class NodeBox(Box):
                 del self.box.contained_values[remove_idx]
                 r_ani = self.box.manager.delete_value(removed_value)
 
-                return SequentialAnimation([ParallelAnimation([shift, resize, r_ani]), self.box.manager.arrange_boxes()])
+                return SequentialAnimation([
+                    ParallelAnimation([shift, resize, r_ani]), 
+                    self.box.manager.arrange_boxes()
+                ])
 
         return CallbackAnimation(begin_remove(self))
 
@@ -275,7 +284,10 @@ class NodeBox(Box):
                     l.connections[-1].plug(r, 0)
                     del l.connections[-1]
 
-                return SequentialAnimation([ParallelAnimation([resize_l, move_l, insert_r]), node.manager.arrange_boxes()])
+                return SequentialAnimation([
+                    ParallelAnimation([resize_l, move_l, insert_r]), 
+                    node.manager.arrange_boxes()
+                ])
 
         return CallbackAnimation(rotate_begin(self))
     
@@ -308,7 +320,12 @@ class NodeBox(Box):
 
                 insert_l = l.inner_insert(value_c, len(l.contained_values), 2)
 
-                return SequentialAnimation([ParallelAnimation([resize_r, val_shift, conn_shift, move_r, insert_l]), node.manager.arrange_boxes()])
+                return SequentialAnimation([
+                    ParallelAnimation([
+                        resize_r, val_shift, conn_shift, move_r, insert_l
+                    ]), 
+                    node.manager.arrange_boxes()
+                ])
 
         return CallbackAnimation(rotate_begin(self))
 
@@ -457,23 +474,35 @@ class BoxManager:
                 animation_list = []
 
                 root = self.manager.root
-                animation_list.append(root.move(root_pos - np.array([root.size[0]/2, 0])))
+                animation_list.append(
+                    root.move(root_pos - np.array([root.size[0]/2, 0]))
+                )
                 center_x, root_y = root_pos
 
                 prev_row = [root]
                 row_number = 1
                 while True:
-                    new_row = [conn.target for node in prev_row for conn in node.connections]
+                    new_row = [
+                        conn.target 
+                        for node in prev_row
+                            for conn in node.connections
+                    ]
                     if len(new_row) == 0:
                         break
                     
-                    row_y = root_y + row_number*(VALUEBOX_SIZE[0] + ROW_DISTANCE)
-                    value_number = sum([len(node.contained_values) for node in new_row])
-                    row_width = value_number*VALUEBOX_SIZE[0] + (len(new_row)-1)*NODE_DISTANCE
+                    row_y = root_y + \
+                        row_number*(VALUEBOX_SIZE[0] + ROW_DISTANCE)
+                    value_number = sum([
+                        len(node.contained_values) for node in new_row
+                    ])
+                    row_width = value_number*VALUEBOX_SIZE[0] + \
+                        (len(new_row)-1)*NODE_DISTANCE
 
                     row_x = center_x - row_width/2
                     for node in new_row:
-                        animation_list.append(node.move(np.array([row_x, row_y])))
+                        animation_list.append(
+                            node.move(np.array([row_x, row_y]))
+                        )
                         row_x += node.size[0] + NODE_DISTANCE
                     
                     prev_row = new_row
@@ -496,14 +525,19 @@ class BoxManager:
 
                 median = len(old_root.contained_values)//2
 
-                new_root.pos = old_root.pos + np.array([VALUEBOX_SIZE[0]*median, 0])        
+                new_root.pos = old_root.pos + \
+                    np.array([VALUEBOX_SIZE[0]*median, 0])        
                 new_root.display = True
-                new_node.pos = old_root.pos + np.array([VALUEBOX_SIZE[0]*(median + 1), 0])
+                new_node.pos = old_root.pos + \
+                    np.array([VALUEBOX_SIZE[0]*(median + 1), 0])
                 new_node.display = True
 
-                new_root.contained_values.append(old_root.contained_values[median])
+                new_root.contained_values.append(
+                    old_root.contained_values[median]
+                )
                 
-                new_node.contained_values = old_root.contained_values[median+1:]
+                new_node.contained_values = \
+                    old_root.contained_values[median+1:]
                 for i, conn in enumerate(old_root.connections[median+1:]):
                     conn.plug(new_node, i)
 

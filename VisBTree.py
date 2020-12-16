@@ -196,12 +196,19 @@ class VisBtree:
             return False
 
         def __str__(self):
-            res = "> " + "".join([str(self.key[i]) + " " for i in range(self.fill)]) + "\n"
+            res = "> " \
+                + "".join([
+                      str(self.key[i]) + " " for i in range(self.fill)
+                  ]) + "\n"
+            
             if not self.is_leaf:
                 res += "+---"*(self.fill) + "+\n"
                 for i in range(self.fill, -1, -1):
                     res += ("|   "*(i+1) + "\n")
-                    res += "".join(["|   "*i + line + "\n" for line in str(self.c[i]).splitlines()])
+                    res += "".join([
+                        "|   "*i + line + "\n" 
+                        for line in str(self.c[i]).splitlines()
+                    ])
 
             return res
 
