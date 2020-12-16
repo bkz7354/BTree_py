@@ -13,7 +13,8 @@ class Perspective:
         self.scale_factor = scale_factor
 
     def change_focus(self, dx_px, dy_px):
-        self.pos_c = self.pos_c - np.array([dx_px, dy_px]).astype(float)/self.scale_factor
+        new_pos = np.array([dx_px, dy_px]).astype(float)
+        self.pos_c = self.pos_c - new_pos/self.scale_factor
 
     def change_zoom(self, new_scale):
         self.scale_factor = new_scale
@@ -62,7 +63,8 @@ def draw_value_box(box, surface):
     surface.blit(text_surf, (pos + (size-text_size)/2).astype(int))
 
 def draw_connection(conn, surface):
-    beg, end = persp.screen_coord(np.array([conn.beg + conn.parent.pos, conn.get_end()]))
+    end_coords = np.array([conn.beg + conn.parent.pos, conn.get_end()])
+    beg, end = persp.screen_coord(end_coords)
 
     pg.draw.aaline(surface, conn.color, beg, end, 2)
 

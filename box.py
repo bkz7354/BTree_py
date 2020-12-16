@@ -54,7 +54,9 @@ class ValueBox(Box):
 
 class NodeBox(Box):
     def __init__(self, manager, pos, parent=None):
-        Box.__init__(self, manager, pos, VALUEBOX_SIZE, parent=parent, padding=0.05)
+        Box.__init__(
+            self, manager, pos, VALUEBOX_SIZE, parent=parent, padding=0.05
+        )
         self.contained_values = []
         self.connections = []
 
@@ -62,7 +64,9 @@ class NodeBox(Box):
         self.size[0] = 0
 
     def adjust_size(self):
-        self.size = np.array([VALUEBOX_SIZE[0]*len(self.contained_values), VALUEBOX_SIZE[1]])
+        self.size = np.array(
+            [VALUEBOX_SIZE[0]*len(self.contained_values), VALUEBOX_SIZE[1]]
+        )
     
     def adjust_values(self):
         for i, value_box in enumerate(self.contained_values):
@@ -86,7 +90,12 @@ class NodeBox(Box):
                 animation_list = []
 
                 for value_box in self.box.contained_values[pos:]:
-                    animation_list.append(MoveBoxAnimation(value_box, value_box.pos, value_box.pos + self.move_vect))
+                    animation_list.append(
+                        MoveBoxAnimation(
+                            value_box, value_box.pos, 
+                            value_box.pos + self.move_vect
+                        )
+                    )
 
                 return ParallelAnimation(animation_list)
 
@@ -102,7 +111,11 @@ class NodeBox(Box):
                 animation_list = []
 
                 for conn in self.box.connections[pos:]:
-                    animation_list.append(MoveConnAnimation(conn, conn.beg, conn.beg + self.move_vect))
+                    animation_list.append(
+                        MoveConnAnimation(
+                            conn, conn.beg, conn.beg + self.move_vect
+                        )
+                    )
 
                 return ParallelAnimation(animation_list)
 
@@ -116,7 +129,9 @@ class NodeBox(Box):
                 self.move_vect = x_vector(shift*VALUEBOX_SIZE[0])
 
             def __call__(self, animation):
-                return ResizeBoxAnimation(self.box, self.box.size, self.box.size + self.move_vect)
+                return ResizeBoxAnimation(
+                    self.box, self.box.size, self.box.size + self.move_vect
+                )
 
         return CallbackAnimation(begin_resize(self))
 
@@ -135,7 +150,10 @@ class NodeBox(Box):
 
                 return ParallelAnimation([shift, resize, move])
 
-        return SequentialAnimation([CallbackAnimation(insert_begin(self)), self.manager.arrange_boxes()])
+        return SequentialAnimation([
+            CallbackAnimation(insert_begin(self)), 
+            self.manager.arrange_boxes()
+        ])
     
     def inner_insert(self, value_box, insert_idx, conn_delta=1):
         class insert_begin:
@@ -309,10 +327,18 @@ class NodeBox(Box):
                 c_val = node.contained_values[c_idx]
                 c_val.tie_to(l)
                 l.contained_values.append(c_val)
-                animations.append(c_val.move(l.get_relative(len(l.contained_values)-1)))
+                animations.append(
+                    c_val.move(
+                        l.get_relative(len(l.contained_values)-1)
+                    )
+                )
 
                 del node.contained_values[c_idx]
-                animations.append(node.manager.delete_connection(node.connections[c_idx+1]))
+                animations.append(
+                    node.manager.delete_connection(
+                        node.connections[c_idx+1]
+                    )
+                )
                 del node.connections[c_idx+1]
 
                 animations.append(node.shift_values(c_idx, -1))
@@ -323,7 +349,11 @@ class NodeBox(Box):
                 for val_box in r.contained_values:
                     val_box.tie_to(l)
                     l.contained_values.append(val_box)
-                    animations.append(val_box.move(l.get_relative(len(l.contained_values)-1)))
+                    animations.append(
+                        val_box.move(
+                            l.get_relative(len(l.contained_values)-1)
+                        )
+                    )
                 r.contained_values.clear()
                 
         
@@ -332,7 +362,10 @@ class NodeBox(Box):
                 r.connections.clear()
                 animations.append(node.manager.delete_node(r))
 
-                return SequentialAnimation([ParallelAnimation(animations), node.manager.arrange_boxes()])
+                return SequentialAnimation(
+                    [ParallelAnimation(animations), 
+                     node.manager.arrange_boxes()]
+                )
 
         return CallbackAnimation(merge_begin(self))
 
@@ -366,6 +399,9 @@ class BoxManager:
         self.root = None
         self.root_pos = root_pos
         self.box_pos = box_pos
+
+    def get_objects(self):
+        return self.nodes, self.values, self.connections
 
     def new_node(self):
         res = NodeBox(self, self.box_pos)
@@ -436,7 +472,7 @@ class BoxManager:
                     row_width = value_number*VALUEBOX_SIZE[0] + (len(new_row)-1)*NODE_DISTANCE
 
                     row_x = center_x - row_width/2
-                    for i, node in enumerate(new_row):
+                    for node in new_row:
                         animation_list.append(node.move(np.array([row_x, row_y])))
                         row_x += node.size[0] + NODE_DISTANCE
                     
@@ -501,11 +537,15 @@ class BoxManager:
     def change_root(self, new_root):
         def callback(animation):
             animations = []
-            animations.append(self.delete_connection(self.root.connections[0]))
+            animations.append(
+                self.delete_connection(self.root.connections[0])
+            )
             animations.append(self.delete_node(self.root))
             self.root = new_root
 
-            return SequentialAnimation([ParallelAnimation(animations), self.arrange_boxes()])
+            return SequentialAnimation([
+                ParallelAnimation(animations), self.arrange_boxes()
+            ])
 
         return CallbackAnimation(callback)
     

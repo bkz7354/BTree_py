@@ -70,7 +70,7 @@ def main():
         draw.persp.change_zoom(GUI_manager.get_zoom())
 
         screen.fill(col.LIGHT_PURPLE)
-        draw.draw_objects(box_manager.nodes, box_manager.values, box_manager.connections, screen)
+        draw.draw_objects(*box_manager.get_objects(), screen)
         GUI_manager.update_and_draw(time_delta)
         pg.display.update()
     

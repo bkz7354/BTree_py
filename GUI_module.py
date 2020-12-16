@@ -37,7 +37,9 @@ class InterfaceManager:
         self.window_width = screen.get_width()
         self.window_height = screen.get_height()
 
-        self.manager = pgui.UIManager((self.window_width, self.window_height), theme_path)
+        self.manager = pgui.UIManager(
+            (self.window_width, self.window_height), theme_path
+        )
 
 
         self.box_height = 29
@@ -54,13 +56,14 @@ class InterfaceManager:
     def init_text_entry(self):
         textRect = pg.Rect(0, 0, 180, self.box_height)
         textRect.bottomleft = (10, -10)
+        anchors = {'left': 'left',
+                   'right': 'left',
+                   'top': 'bottom',
+                   'bottom': 'bottom'}
     
         self.textEntry = pgui.elements.UITextEntryLine(
-                                      textRect, self.manager,
-                                      anchors={'left': 'left',
-                                               'right': 'left',
-                                               'top': 'bottom',
-                                               'bottom': 'bottom'})
+            textRect, self.manager, anchors=anchors
+        )
         
         self.textEntry.set_allowed_characters('numbers')
         self.textEntry.set_text_length_limit(4)
@@ -68,28 +71,40 @@ class InterfaceManager:
     def init_buttons(self):
         buttonRect = pg.Rect(0, 0, 90, 29)
 
-        self.insertButton = self.init_button_bottomleft(buttonRect, (210, -10), 'Insert')
-        self.removeButton = self.init_button_bottomleft(buttonRect, (310, -10), 'Remove')
-        self.insertRandomButton = self.init_button_bottomleft(buttonRect, (410, -10), 'RNG Insert')
-        self.removeRandomButton = self.init_button_bottomleft(buttonRect, (510, -10), 'RNG Remove')
+        self.insertButton = self.init_button_bottomleft(
+            buttonRect, (210, -10), 'Insert'
+        )
+        self.removeButton = self.init_button_bottomleft(
+            buttonRect, (310, -10), 'Remove'
+        )
+        self.insertRandomButton = self.init_button_bottomleft(
+            buttonRect, (410, -10), 'RNG Insert'
+        )
+        self.removeRandomButton = self.init_button_bottomleft(
+            buttonRect, (510, -10), 'RNG Remove'
+        )
 
     def init_button_bottomleft(self, rect, pos, text):
         """
-        inits button in such a way that it is placed relative to the bottom left corner
+        inits button in such a way that it is 
+        placed relative to the bottom left corner
         """
         buttonRect = rect.copy()
         buttonRect.bottomleft = pos
-        return pgui.elements.UIButton(relative_rect=buttonRect,
-                                      text=text, manager=self.manager,
-                                      anchors={'left': 'left',
-                                               'right': 'left',
-                                               'top': 'bottom',
-                                               'bottom': 'bottom'})
+        anchors = {'left': 'left',
+                   'right': 'left',
+                   'top': 'bottom',
+                   'bottom': 'bottom'}
+
+        return pgui.elements.UIButton(
+            relative_rect=buttonRect, text=text, 
+            manager=self.manager, anchors=anchors
+        )
 
     
     def init_speed_slider(self, speed_range):
         """
-        initiates speed slider and display label
+        initiates speed slider and speed display label
         """
         anchors = {'left': 'right',
                    'right': 'right',
@@ -99,41 +114,52 @@ class InterfaceManager:
 
         labelRect = pg.Rect((0, 0, 120, 29))
         labelRect.bottomright = (-10, -10)
-        self.speedLabel = pgui.elements.UILabel(labelRect, "speed: 1", 
-                                                self.manager, anchors=anchors)
+        self.speedLabel = pgui.elements.UILabel(
+            labelRect, "speed: 1", self.manager, anchors=anchors
+        )
         
         sliderRect = pg.Rect((0, 0, 200, 29))
         sliderRect.bottomright = (-140, -10)
-        self.speedSlider = pgui.elements.UIHorizontalSlider(sliderRect, 1, 
-                                                            speed_range, self.manager,
-                                                            anchors=anchors)
+        self.speedSlider = pgui.elements.UIHorizontalSlider(
+            sliderRect, 1, speed_range, self.manager, anchors=anchors
+        )
 
 
     def init_zoom_controls(self, initial_val, min_val, max_val, zoom_speed):
         self.zoom_range = []
         for i in np.linspace(min_val, max_val, 20):
             self.zoom_range.append(i)
-        self.zoom_idx = self.zoom_range.index(min(self.zoom_range, key=lambda x:abs(x-initial_val)))
+        self.zoom_idx = self.zoom_range.index(
+            min(self.zoom_range, key=lambda x:abs(x - initial_val))
+        )
 
         buttonRect = pg.Rect(0, 0, 30, self.box_height)
-        self.zoomIncButton = self.init_button_bottomright(buttonRect, (-380, -10), "+")
-        self.zoomDecButton = self.init_button_bottomright(buttonRect, (-410, -10), "-")
+        self.zoomIncButton = self.init_button_bottomright(
+            buttonRect, (-380, -10), "+"
+        )
+        self.zoomDecButton = self.init_button_bottomright(
+            buttonRect, (-410, -10), "-"
+        )
 
 
     def init_button_bottomright(self, rect, pos, text):
         """
-        inits button in such a way that it is placed relative to the bottom right corner
+        inits button in such a way that it is placed 
+        relative to the bottom right corner
         """
         buttonRect = rect.copy()
         buttonRect.bottomleft = pos
-        return pgui.elements.UIButton(relative_rect=buttonRect,
-                                      text=text, manager=self.manager,
-                                      anchors={'left': 'right',
-                                               'right': 'right',
-                                               'top': 'bottom',
-                                               'bottom': 'bottom'})
+        anchors = {'left': 'right',
+                'right': 'right',
+                'top': 'bottom',
+                'bottom': 'bottom'}
+        
+        return pgui.elements.UIButton(
+            relative_rect=buttonRect, text=text, 
+            manager=self.manager, anchors= anchors
+        )
 
-    def send_text_from_input(self, event_type):
+    def send_input_as_event(self, event_type):
         string = self.textEntry.get_text()
         if string:
             pg.event.post(pg.event.Event(event_type, value=int(string)))
@@ -144,13 +170,13 @@ class InterfaceManager:
         if event.type == pg.USEREVENT:
             if event.user_type == pgui.UI_BUTTON_PRESSED:
                 if event.ui_element == self.insertButton:
-                    self.send_text_from_input(INSERT_EVENT)
+                    self.send_input_as_event(INSERT_EVENT)
                 elif event.ui_element == self.removeButton:
-                    self.send_text_from_input(REMOVE_EVENT)
+                    self.send_input_as_event(REMOVE_EVENT)
                 elif event.ui_element == self.insertRandomButton:
-                    self.send_text_from_input(INSERT_RNG_EVENT)
+                    self.send_input_as_event(INSERT_RNG_EVENT)
                 elif event.ui_element == self.removeRandomButton:
-                    self.send_text_from_input(REMOVE_RNG_EVENT)
+                    self.send_input_as_event(REMOVE_RNG_EVENT)
                 elif event.ui_element == self.zoomIncButton:
                     self.inc_zoom()
                 elif event.ui_element == self.zoomDecButton:
@@ -165,15 +191,20 @@ class InterfaceManager:
         return self.speedSlider.get_current_value()
 
     def update_displayed_speed(self):
-        self.speedLabel.set_text("speed: " + str(truncate(self.get_speed(), 1)))
+        self.speedLabel.set_text(
+            "speed: " + str(truncate(self.get_speed(), 1))
+        )
     
     def get_mouse_y(self):
         _, y = pg.mouse.get_pos()
 
         return y
 
+    def check_mouse_gui_hover(self):
+        return self.get_mouse_y() >= self.window_height - self.gui_height
+
     def begin_mouse_drag(self):
-        if not self.mouse_drag and self.get_mouse_y() < self.window_height - self.gui_height:
+        if not self.mouse_drag and not self.check_mouse_gui_hover():
             self.mouse_drag = True
             pg.mouse.get_rel()
     
@@ -199,8 +230,12 @@ class InterfaceManager:
         self.update_displayed_speed()
         self.manager.update(time_delta)
 
-        pg.draw.rect(self.screen, col.PURPLE, (0, self.window_height - self.gui_height, 
-                                                  self.window_width, self.gui_height))
+        pg.draw.rect(
+            self.screen, col.PURPLE, (
+                0, self.window_height - self.gui_height, 
+                self.window_width, self.gui_height
+            )
+        )
         self.manager.draw_ui(self.screen)
 
 
