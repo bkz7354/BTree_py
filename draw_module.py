@@ -8,12 +8,18 @@ INITIAL_SHIFT = np.array([-10, -5])
 
 
 class Perspective:
-    def __init__(self, pos_c, scale_f):
+    def __init__(self, pos_c, scale_factor):
         self.pos_c = pos_c
-        self.scale_f = scale_f
+        self.scale_factor = scale_factor
+
+    def change_focus(self, dx_px, dy_px):
+        self.pos_c = self.pos_c - np.array([dx_px, dy_px]).astype(float)/self.scale_factor
+
+    def change_zoom(self, new_scale):
+        self.scale_factor = new_scale
 
     def scale(self, vect):
-        return vect*self.scale_f
+        return vect*self.scale_factor
 
     def shift(self, vect):
         return vect - self.pos_c
