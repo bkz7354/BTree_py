@@ -1,5 +1,9 @@
 
 class Connector:
+    """
+    The class that serves as connector between animation manager
+    box manager and B-tree structure
+    """
     def __init__(self, ani_manager, box_manager):
         self.ani_manager = ani_manager
         self.box_manager = box_manager

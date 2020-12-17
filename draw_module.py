@@ -8,6 +8,10 @@ INITIAL_SHIFT = np.array([-10, -5])
 
 
 class Perspective:
+    """
+    The class that manages the conversion from coordinates used in box 
+    module to screen coordinates 
+    """
     def __init__(self, pos_c, scale_factor):
         self.pos_c = pos_c
         self.scale_factor = scale_factor
@@ -42,14 +46,14 @@ persp = Perspective(INITIAL_SHIFT, INITIAL_SCALE)
 
 
 
-def render_value(persp, value):
+def render_value(box_size, value):
     font = pg.font.SysFont("Times new Roman", 30)
     text = str(value).zfill(4)
 
     surf = font.render(text, True, (0, 0, 0))
     surf_size = np.array(surf.get_size())
 
-    scale = min(persp/surf_size)
+    scale = min(box_size/surf_size)
     return pg.transform.scale(surf, (surf_size*scale).astype(int))
 
 def draw_value_box(box, surface):

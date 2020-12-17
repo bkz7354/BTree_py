@@ -17,6 +17,9 @@ def y_vector(y):
     return np.array([0, y])
 
 class Box:
+    """
+    A base class that represents a box drawn onto the screen
+    """
     def __init__(self, manager, pos, size, parent=None, padding=0):
         self.display = False
         self.u_id = uuid.uuid1()
@@ -28,6 +31,9 @@ class Box:
         self.manager = manager
 
     def move(self, pos):
+        """
+        Function that returns an animation object that moves a box
+        """
         class move_begin:
             def __init__(self, pos, box):
                 self.box = box
@@ -40,11 +46,18 @@ class Box:
     
 
 class ValueBox(Box):
+    """
+    Box that represents a single value inserted into a tree
+    """
     def __init__(self, manager, pos, val, parent=None):
         Box.__init__(self, manager, pos, VALUEBOX_SIZE, parent=parent)
         self.value = val
 
     def tie_to(self, node=None):
+        """
+        Changes box coordinates to be relative to the giveb node box.
+        Switches to absolute coordinates if node == None
+        """
         if self.parent is not None:
             self.pos =  self.pos + self.parent.pos
         if node is not None:
@@ -53,6 +66,9 @@ class ValueBox(Box):
 
 
 class NodeBox(Box):
+    """
+    Box that represents a single node contained in a tree
+    """
     def __init__(self, manager, pos, parent=None):
         Box.__init__(
             self, manager, pos, VALUEBOX_SIZE, parent=parent, padding=0.05
@@ -63,24 +79,27 @@ class NodeBox(Box):
         self.color = col.BLUE
         self.size[0] = 0
 
-    def adjust_size(self):
+    def fix_size(self):
         self.size = np.array(
             [VALUEBOX_SIZE[0]*len(self.contained_values), VALUEBOX_SIZE[1]]
         )
     
-    def adjust_values(self):
+    def fix_values(self):
         for i, value_box in enumerate(self.contained_values):
             value_box.parent = self
             value_box.pos = x_vector(i*VALUEBOX_SIZE[0])
 
     def adjust(self):
-        self.adjust_size()
-        self.adjust_values()
+        self.fix_size()
+        self.fix_values()
 
-    def get_relative(self, pos):
+    def get_array_pos(self, pos):
         return x_vector(pos*VALUEBOX_SIZE[0])
     
     def shift_values(self, pos, shift):
+        """
+        Returns an animation object that shifts values inside the node
+        """
         class begin_shift:
             def __init__(self, box, pos, shift):
                 self.box = box
@@ -102,6 +121,9 @@ class NodeBox(Box):
         return CallbackAnimation(begin_shift(self, pos, shift))
 
     def shift_connections(self, pos, shift):
+        """
+        Returns an animation object that shifts connections inside the node
+        """
         class begin_shift:
             def __init__(self, box, pos, shift):
                 self.box = box
@@ -123,6 +145,9 @@ class NodeBox(Box):
 
 
     def resize(self, shift):
+        """
+        Returns an animation object that resizes the node
+        """
         class begin_resize:
             def __init__(self, box):
                 self.box = box
@@ -136,6 +161,9 @@ class NodeBox(Box):
         return CallbackAnimation(begin_resize(self))
 
     def leaf_insert(self, insert_idx, value_box):
+        """
+        Returns an animation object that inserts a given value into the leaf
+        """
         class insert_begin:
             def __init__(self, box):
                 self.box = box
@@ -146,7 +174,7 @@ class NodeBox(Box):
                 value_box.tie_to(self.box)
                 value_box.display = True
                 self.box.contained_values.insert(insert_idx, value_box)
-                move = value_box.move(self.box.get_relative(insert_idx))
+                move = value_box.move(self.box.get_array_pos(insert_idx))
 
                 return ParallelAnimation([shift, resize, move])
 
@@ -156,6 +184,11 @@ class NodeBox(Box):
         ])
     
     def inner_insert(self, value_box, insert_idx, conn_delta=1):
+        """
+        Returns an animation object that inserts a given value onto a
+        give position in the node. This method is not standalone and is used
+        in split_child method.
+        """
         class insert_begin:
             def __init__(self, box):
                 self.box = box
@@ -169,7 +202,7 @@ class NodeBox(Box):
 
                 value_box.tie_to(self.box)
                 self.box.contained_values.insert(insert_idx, value_box)
-                move = value_box.move(self.box.get_relative(insert_idx))
+                move = value_box.move(self.box.get_array_pos(insert_idx))
 
                 return ParallelAnimation([
                     val_shift, conn_shift, resize, move
@@ -178,6 +211,10 @@ class NodeBox(Box):
         return CallbackAnimation(insert_begin(self))
 
     def split_child(self, c_idx):
+        """
+        Returns an animation object that performs node split 
+        operation on the given index
+        """
         new_node = self.manager.new_node()
 
         class begin_split:
@@ -219,6 +256,9 @@ class NodeBox(Box):
         return CallbackAnimation(begin_split(self)), new_node
 
     def leaf_remove(self, remove_idx):
+        """
+        Returns an animation object that removes a value from a leaf
+        """
         class begin_remove:
             def __init__(self, box):
                 self.box = box
@@ -239,6 +279,11 @@ class NodeBox(Box):
         return CallbackAnimation(begin_remove(self))
 
     def pull_max(self, replace_idx, pull_node):
+        """
+        Returns an animation object that replaces the value at the 
+        given index with the maximum value from the given leaf node.
+        It is used for deletions from non-leaf nodes.
+        """
         class pull_begin:
             def __init__(self, box):
                 self.box = box
@@ -253,13 +298,17 @@ class NodeBox(Box):
                 
                 moved_box.tie_to(self.box)
                 self.box.contained_values[replace_idx] = moved_box
-                move = moved_box.move(self.box.get_relative(replace_idx))
+                move = moved_box.move(self.box.get_array_pos(replace_idx))
 
                 return ParallelAnimation([resize, move, del_ani])
 
         return CallbackAnimation(pull_begin(self))
 
     def rotate_cw(self, c_idx):
+        """
+        Returns an animation object that preforms a clockwise 
+        rotation on the child with the given index and the next child.
+        """
         class rotate_begin:
             def __init__(self, box):
                 self.box = box
@@ -275,7 +324,7 @@ class NodeBox(Box):
                 resize_l = l.resize(-1)
                 del l.contained_values[-1]
                 value_l.tie_to(node)
-                move_l = value_l.move(node.get_relative(c_idx))
+                move_l = value_l.move(node.get_array_pos(c_idx))
                 node.contained_values[c_idx] = value_l
                 value_c.tie_to()
 
@@ -292,6 +341,10 @@ class NodeBox(Box):
         return CallbackAnimation(rotate_begin(self))
     
     def rotate_ccw(self, c_idx):
+        """
+        Returns an animation object that preforms a counterclockwise 
+        rotation on the child with the given index and the next child.
+        """
         class rotate_begin:
             def __init__(self, box):
                 self.box = box
@@ -314,7 +367,7 @@ class NodeBox(Box):
                 conn_shift = r.shift_connections(0, -1)
 
                 value_r.tie_to(node)
-                move_r = value_r.move(node.get_relative(c_idx))
+                move_r = value_r.move(node.get_array_pos(c_idx))
                 node.contained_values[c_idx] = value_r
                 value_c.tie_to()
 
@@ -330,6 +383,10 @@ class NodeBox(Box):
         return CallbackAnimation(rotate_begin(self))
 
     def merge_children(self, c_idx):
+        """
+        Returns an animation object that merges child with index c_idx+1
+        into the child with index c_idx.
+        """
         class merge_begin:
             def __init__(self, box):
                 self.box = box
@@ -346,7 +403,7 @@ class NodeBox(Box):
                 l.contained_values.append(c_val)
                 animations.append(
                     c_val.move(
-                        l.get_relative(len(l.contained_values)-1)
+                        l.get_array_pos(len(l.contained_values)-1)
                     )
                 )
 
@@ -368,7 +425,7 @@ class NodeBox(Box):
                     l.contained_values.append(val_box)
                     animations.append(
                         val_box.move(
-                            l.get_relative(len(l.contained_values)-1)
+                            l.get_array_pos(len(l.contained_values)-1)
                         )
                     )
                 r.contained_values.clear()
@@ -387,12 +444,20 @@ class NodeBox(Box):
         return CallbackAnimation(merge_begin(self))
 
     def add_connection(self, conn, idx):
+        """
+        Adds the connection to the list of outgoing connections and 
+        corrects the coordinates of its beginning.
+        """
         self.connections.insert(idx, conn)
-        conn.beg = self.get_relative(idx) + y_vector(VALUEBOX_SIZE[1])
+        conn.beg = self.get_array_pos(idx) + y_vector(VALUEBOX_SIZE[1])
 
     
     
 class Connection:
+    """
+    Class that represents a connection between 
+    tree nodes draw onto the screen
+    """
     def __init__(self, target_node):
         self.target = target_node
         self.color = col.BLACK
@@ -408,6 +473,9 @@ class Connection:
         return self.target.pos + [self.target.size[0]/2, 0]
 
 class BoxManager:
+    """
+    Class that manages the objects displayed on the screen
+    """
     def __init__(self, root_pos=[5, 2], box_pos=[0,0]):
         self.values = {}
         self.nodes = {}
@@ -461,6 +529,9 @@ class BoxManager:
         self.root = node
 
     def arrange_boxes(self):
+        """
+        Returns an animation object that arrenges nodes in the tree
+        """
         class begin_arrange:
             def __init__(self, manager, root_pos):
                 self.manager = manager
@@ -513,6 +584,10 @@ class BoxManager:
         return CallbackAnimation(begin_arrange(self, self.root_pos))
 
     def split_root(self):
+        """
+        Returns an animation object that 
+        performs a split opertion on the root
+        """
         new_root = self.new_node()
         new_node = self.new_node()
 
@@ -594,7 +669,6 @@ class BoxManager:
 
 class MoveBoxAnimation(SingularAnimation):
     def __init__(self, box, pos_from, pos_to, duration=BOXMOVE_DURATION):
-        #print("move box: ", pos_from, pos_to)
         SingularAnimation.__init__(self, duration)
         self.fr = np.array(pos_from)
         self.to = np.array(pos_to)
@@ -607,7 +681,6 @@ class MoveBoxAnimation(SingularAnimation):
 
 class ResizeBoxAnimation(SingularAnimation):
     def __init__(self, box, size_from, size_to, duration=BOXMOVE_DURATION):
-        #print("resize box: ", size_from, size_to)
         SingularAnimation.__init__(self, duration)
         self.fr = size_from
         self.to = size_to

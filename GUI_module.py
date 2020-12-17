@@ -87,7 +87,7 @@ class InterfaceManager:
     def init_button_bottomleft(self, rect, pos, text):
         """
         inits button in such a way that it is 
-        placed relative to the bottom left corner
+        placed relative to the bottom left corner of the screen
         """
         buttonRect = rect.copy()
         buttonRect.bottomleft = pos
@@ -145,7 +145,7 @@ class InterfaceManager:
     def init_button_bottomright(self, rect, pos, text):
         """
         inits button in such a way that it is placed 
-        relative to the bottom right corner
+        relative to the bottom right corner of the screen
         """
         buttonRect = rect.copy()
         buttonRect.bottomleft = pos
@@ -160,6 +160,10 @@ class InterfaceManager:
         )
 
     def send_input_as_event(self, event_type):
+        """
+        Takes the text from the imput line, converts it to integer
+        and sends witin an event with the spcified type
+        """
         string = self.textEntry.get_text()
         if string:
             pg.event.post(pg.event.Event(event_type, value=int(string)))
