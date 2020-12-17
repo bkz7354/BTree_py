@@ -1,14 +1,27 @@
 
 
 class BaseAnimation:
+    """
+    Base animation class that provides interface
+    to other animations
+    """
     def __init__(self, callback=None):
         self.callback = callback
     def update(self, time_delta):
+        """
+        The method that is caled when the 
+        animation is updated. Returns updated animation
+        that should replace the animtaion from which the method
+        was called 
+        """
         return self
     def is_done(self):
         return True
 
 class CallbackAnimation(BaseAnimation):
+    """
+    Runs a callback the first time it's updated
+    """
     def __init__(self, callback=None):
         super().__init__(callback)
         self.done = False
@@ -28,6 +41,11 @@ class CallbackAnimation(BaseAnimation):
 
 
 class SingularAnimation(BaseAnimation):
+    """
+    A base class for animation that have duration.
+    The method update_objects is provided to be overloaded
+    by derived classes
+    """
     def __init__(self, duration, callback=None):
         super().__init__(callback)
         self.progress = 0
@@ -54,6 +72,9 @@ class SingularAnimation(BaseAnimation):
         return self.progress >= 1
 
 class SequentialAnimation(BaseAnimation):
+    """
+    An animation that executes a list of animations sequentially.
+    """
     def __init__(self, animation_list, callback=None):
         super().__init__(callback)
         self.animations = animation_list
@@ -74,6 +95,9 @@ class SequentialAnimation(BaseAnimation):
         return len(self.animations) == 0
 
 class ParallelAnimation(BaseAnimation):
+    """
+    An animation that executes a list of animations in parralel.
+    """
     def __init__(self, animation_list, callback=None):
         super().__init__(callback)
         self.animations = animation_list
@@ -93,6 +117,9 @@ class ParallelAnimation(BaseAnimation):
         return all([x.is_done() for x in self.animations])
 
 class AnimationManager:
+    """
+    A class that represents an execution queue
+    """
     def __init__(self):
         self.running = []
 
