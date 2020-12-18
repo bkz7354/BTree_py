@@ -7,6 +7,8 @@ class BaseAnimation:
     """
     def __init__(self, callback=None):
         self.callback = callback
+        self.done = False
+
     def update(self, time_delta):
         """
         The method that is caled when the 
@@ -14,18 +16,6 @@ class BaseAnimation:
         that should replace the animtaion from which the method
         was called 
         """
-        return self
-    def is_done(self):
-        return True
-
-class CallbackAnimation(BaseAnimation):
-    """
-    Runs a callback the first time it's updated
-    """
-    def __init__(self, callback=None):
-        super().__init__(callback)
-        self.done = False
-    
     def update(self, time_delta):
         if self.is_done():
             return self
@@ -59,6 +49,7 @@ class SingularAnimation(BaseAnimation):
         self.progress += time_delta/self.duration
         if self.progress > 1:
             self.progress = 1
+        self.done = self.progress >= 1
         self.update_objects()
 
         if self.is_done() and self.callback is not None:
@@ -67,9 +58,6 @@ class SingularAnimation(BaseAnimation):
 
     def update_objects(self):
         pass
-
-    def is_done(self):
-        return self.progress >= 1
 
 class SequentialAnimation(BaseAnimation):
     """
@@ -86,13 +74,11 @@ class SequentialAnimation(BaseAnimation):
         self.animations[0] = self.animations[0].update(time_delta)
         if self.animations[0].is_done():
             del self.animations[0]
+        self.done = len(self.animations) == 0
 
         if self.is_done() and self.callback is not None:
             self.callback(self)
         return self
-
-    def is_done(self):
-        return len(self.animations) == 0
 
 class ParallelAnimation(BaseAnimation):
     """
@@ -108,13 +94,11 @@ class ParallelAnimation(BaseAnimation):
 
         for i, a in enumerate(self.animations):
             self.animations[i] = a.update(time_delta)
+        self.done = all([x.is_done() for x in self.animations])
 
         if self.is_done() and self.callback is not None:
             return self.callback(self)
         return self
-
-    def is_done(self):
-        return all([x.is_done() for x in self.animations])
 
 class AnimationManager:
     """
